@@ -14,7 +14,7 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Escola e glossário com coleções de conteúdo em Markdown (1 aula e 2 termos de exemplo)
 - ✅ CI no GitHub Actions (checagem de tipos + build)
 - ✅ Repositório git local com o primeiro commit
-- 👤 Criar repositório público `easytrader` no GitHub e fazer o push
+- ✅ Repositório público no GitHub: https://github.com/bertozofelipe/easytrader
 - 👤 Conectar o repositório ao Cloudflare Pages (build: `npm run build`, saída: `dist`)
 
 ## Etapa 1 — Núcleo de dados ⬜ (~2 semanas)
