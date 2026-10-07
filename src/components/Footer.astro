@@ -1,0 +1,21 @@
+---
+import { FOOTER_LINKS, SITE } from '../config';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-border bg-surface mt-12">
+  <div class="max-w-6xl mx-auto px-4 py-8 text-sm text-muted space-y-4">
+    <p class="rounded-lg border border-warn/30 bg-warn/5 p-3 text-warn/90">
+      <strong>Aviso de risco:</strong> o conteúdo do {SITE.name} tem caráter exclusivamente educacional e informativo e
+      não constitui recomendação de investimento. Operar no mercado financeiro e com criptoativos envolve alto risco,
+      inclusive de perda total do capital. Dados podem ter atraso.
+      <a href="/aviso-de-risco" class="underline">Saiba mais</a>.
+    </p>
+    <div class="flex flex-wrap gap-x-4 gap-y-2">
+      {FOOTER_LINKS.map((l) => <a href={l.href} class="hover:text-text">{l.label}</a>)}
+      <a href={SITE.repo} class="hover:text-text" rel="noopener">GitHub</a>
+    </div>
+    <p>© {year} {SITE.name}</p>
+  </div>
+</footer>

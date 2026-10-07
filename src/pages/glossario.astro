@@ -1,0 +1,30 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+
+const termos = (await getCollection('glossario')).sort((a, b) => a.data.termo.localeCompare(b.data.termo, 'pt-BR'));
+const ids = new Set(termos.map((t) => t.id));
+const rendered = await Promise.all(termos.map(async (t) => ({ t, Content: (await render(t)).Content })));
+---
+
+<Layout title="Glossário" description="Glossário do trader: os termos do mercado financeiro e cripto explicados em português.">
+  <PageHeader title="Glossário" subtitle="Os termos do mercado traduzidos para o português claro." />
+  <div class="space-y-4">
+    {rendered.map(({ t, Content }) => (
+      <article id={t.id} class="rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+        <h2 class="text-lg font-semibold">{t.data.termo}</h2>
+        <p class="text-muted text-sm mb-3">{t.data.resumo}</p>
+        <div class="prose-et text-sm"><Content /></div>
+        {t.data.relacionados.filter((r) => ids.has(r)).length > 0 && (
+          <p class="text-sm text-muted mt-2">
+            Veja também:{' '}
+            {t.data.relacionados.filter((r) => ids.has(r)).map((r, i) => (
+              <>{i > 0 && ', '}<a href={`#${r}`} class="text-accent">{termos.find((x) => x.id === r)?.data.termo}</a></>
+            ))}
+          </p>
+        )}
+      </article>
+    ))}
+  </div>
+</Layout>

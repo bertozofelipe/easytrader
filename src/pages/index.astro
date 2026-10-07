@@ -1,0 +1,42 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const sections = [
+  { href: '/noticias', title: 'Notícias', desc: 'O que move o mercado hoje: macro, ações, forex, commodities e cripto.' },
+  { href: '/calendario', title: 'Calendário econômico', desc: 'Payroll, CPI, juros e outros eventos com horário de Brasília e nível de impacto.' },
+  { href: '/ativos', title: 'Ativos', desc: 'Gráficos, variação e resumo técnico de índices, ações, moedas e commodities.' },
+  { href: '/cripto', title: 'Cripto', desc: 'Top moedas, dominância do BTC e índice de medo e ganância.' },
+  { href: '/indicadores', title: 'Indicadores técnicos', desc: 'RSI, MACD, médias móveis, Bollinger e outros, explicados de forma simples.' },
+  { href: '/escola', title: 'Escola', desc: 'Do zero ao primeiro trade: fundamentos, análise técnica, gestão de risco e psicologia.' },
+  { href: '/ferramentas', title: 'Ferramentas', desc: 'Calculadoras de risco, tamanho de posição e risco-retorno.' },
+  { href: '/glossario', title: 'Glossário', desc: 'Os termos do mercado traduzidos para o português claro.' },
+];
+---
+
+<Layout>
+  <section class="py-10 md:py-16">
+    <p class="text-sm uppercase tracking-wider text-accent mb-3">Mercado global e cripto</p>
+    <h1 class="text-4xl md:text-5xl font-bold tracking-tight max-w-3xl">
+      O dia a dia do trader em um só lugar.
+    </h1>
+    <p class="text-lg text-muted mt-4 max-w-2xl">
+      Notícias, calendário econômico, análise de ativos e uma escola para quem está começando. Em português e gratuito.
+    </p>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href="/escola" class="px-4 py-2 rounded-lg bg-accent text-white font-medium hover:opacity-90">Começar a aprender</a>
+      <a href="/calendario" class="px-4 py-2 rounded-lg border border-border hover:bg-surface-2">Ver o calendário</a>
+    </div>
+  </section>
+
+  <section aria-labelledby="secoes">
+    <h2 id="secoes" class="sr-only">Seções</h2>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {sections.map((s) => (
+        <a href={s.href} class="group rounded-xl border border-border bg-surface p-5 hover:border-accent/60 transition-colors">
+          <h3 class="font-semibold group-hover:text-accent">{s.title}</h3>
+          <p class="text-sm text-muted mt-1">{s.desc}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+</Layout>

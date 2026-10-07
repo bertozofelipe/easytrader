@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import ComingSoon from '../components/ComingSoon.astro';
+---
+
+<Layout title="Cripto" description="Painel do mercado cripto: top moedas, dominância do BTC e Fear & Greed.">
+  <PageHeader title="Cripto" subtitle="Panorama do mercado cripto em uma tela." />
+  <ComingSoon phase="Etapa 2" items={['Top 50 criptomoedas por valor de mercado', 'Dominância do Bitcoin', 'Índice de medo e ganância (Fear & Greed)', 'Maiores altas e baixas do dia']} />
+</Layout>

@@ -1,0 +1,17 @@
+---
+interface Props {
+  phase: string;
+  items?: string[];
+}
+
+const { phase, items = [] } = Astro.props;
+---
+
+<div class="rounded-xl border border-dashed border-border bg-surface p-6">
+  <p class="text-xs uppercase tracking-wider text-accent mb-2">Em construção · {phase}</p>
+  {items.length > 0 && (
+    <ul class="list-disc pl-5 space-y-1 text-muted">
+      {items.map((i) => <li>{i}</li>)}
+    </ul>
+  )}
+</div>

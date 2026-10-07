@@ -1,0 +1,27 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import { TRILHAS } from '../../data/trilhas';
+
+export async function getStaticPaths() {
+  const aulas = await getCollection('escola', ({ data }) => !data.draft);
+  return aulas.map((aula) => ({ params: { slug: aula.id }, props: { aula } }));
+}
+
+const { aula } = Astro.props;
+const { Content } = await render(aula);
+const trilha = TRILHAS.find((t) => t.id === aula.data.trilha);
+---
+
+<Layout title={aula.data.title} description={aula.data.description}>
+  <nav class="text-sm text-muted mb-6" aria-label="Breadcrumb">
+    <a href="/escola" class="hover:text-text">Escola</a>
+    <span class="mx-1">/</span>
+    <span>{trilha?.titulo}</span>
+  </nav>
+  <article class="prose-et max-w-3xl">
+    <h1>{aula.data.title}</h1>
+    <p class="text-muted">{aula.data.description}</p>
+    <Content />
+  </article>
+</Layout>

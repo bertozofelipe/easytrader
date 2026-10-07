@@ -1,0 +1,38 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import { TRILHAS } from '../../data/trilhas';
+
+const aulas = (await getCollection('escola', ({ data }) => !data.draft)).sort((a, b) => a.data.ordem - b.data.ordem);
+---
+
+<Layout title="Escola" description="Escola de trading gratuita: fundamentos, análise técnica, gestão de risco e psicologia.">
+  <PageHeader title="Escola" subtitle="Trilhas curtas e diretas para aprender a operar com responsabilidade." />
+
+  <div class="space-y-6">
+    {TRILHAS.map((t, i) => {
+      const lista = aulas.filter((a) => a.data.trilha === t.id);
+      return (
+        <section class="rounded-xl border border-border bg-surface p-5">
+          <p class="text-xs uppercase tracking-wider text-accent">Trilha {i + 1}</p>
+          <h2 class="text-xl font-semibold">{t.titulo}</h2>
+          <p class="text-muted text-sm mt-1">{t.desc}</p>
+          {lista.length > 0 ? (
+            <ol class="mt-4 space-y-2">
+              {lista.map((a) => (
+                <li>
+                  <a href={`/escola/${a.id}`} class="hover:text-accent">
+                    <span class="text-muted font-mono text-sm mr-2">{a.data.ordem}.</span>{a.data.title}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p class="mt-4 text-sm text-muted italic">Aulas em breve.</p>
+          )}
+        </section>
+      );
+    })}
+  </div>
+</Layout>
