@@ -15,15 +15,17 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ CI no GitHub Actions (checagem de tipos + build)
 - ✅ Repositório git local com o primeiro commit
 - ✅ Repositório público no GitHub: https://github.com/bertozofelipe/easytrader
-- 👤 Conectar o repositório ao Cloudflare Pages (build: `npm run build`, saída: `dist`)
+- ✅ Deploy automático no Cloudflare (Workers): https://easytrader.lf-bertozo.workers.dev
 
-## Etapa 1 — Núcleo de dados ⬜ (~2 semanas)
+## Etapa 1 — Núcleo de dados 🔄 (iniciada 06/10/2026)
 
-- ⬜ Pasta `scripts/` com um *provider* por fonte (CoinGecko primeiro)
-- ⬜ GitHub Action agendada (cron) que gera `data/*.json` e faz commit
-- ⬜ Cotações de cripto (top 50) e principais índices/moedas
-- ⬜ Faixa de cotações (ticker) na home com selo "atualizado em"
-- 👤 Criar contas gratuitas em Twelve Data e Finnhub e salvar as chaves em GitHub Secrets
+- ✅ `scripts/` com um *provider* por fonte: CoinGecko, alternative.me (Fear & Greed), Frankfurter (câmbio BCE), Finnhub (EUA)
+- ✅ GitHub Action a cada 15 min publicando os JSON no branch órfão `data` (1 commit, sem rebuild do site)
+- ✅ Fallback: se uma fonte falhar, reaproveita o último JSON publicado marcado como `stale`
+- ✅ Top 50 cripto + dados globais, Fear & Greed, câmbio (EUR, GBP, JPY, BRL)
+- ✅ Faixa de cotações em todas as páginas, atualizada no navegador a cada 5 min, com "atualizado há X min"
+- 👤 Criar conta gratuita na Finnhub e salvar a chave no secret `FINNHUB_API_KEY` (libera S&P 500, Nasdaq, ouro e ações)
+- ⬜ Confirmar a Finnhub em produção e fechar a etapa
 
 ## Etapa 2 — Cripto e ativos ⬜ (~2 semanas)
 

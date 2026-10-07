@@ -7,7 +7,7 @@ import sitemap from '@astrojs/sitemap';
 // https://astro.build/config
 export default defineConfig({
   // Ajustar quando o domínio definitivo estiver configurado.
-  site: 'https://easytrader.pages.dev',
+  site: 'https://easytrader.lf-bertozo.workers.dev',
   trailingSlash: 'ignore',
 
   vite: {

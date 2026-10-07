@@ -1,0 +1,46 @@
+---
+import { formatDateTimeBR } from '../lib/format';
+import { loadData, type TickerData } from '../lib/market';
+import { renderTickerItems } from '../lib/ticker';
+
+const data = await loadData<TickerData>('ticker');
+---
+
+<div class="border-b border-border bg-bg/60" data-ticker>
+  <div class="max-w-6xl mx-auto px-4 h-9 flex items-center gap-4 text-sm">
+    <ul class="flex-1 flex items-center gap-6 overflow-x-auto [scrollbar-width:none]" data-ticker-list aria-label="Cotações">
+      {data ? <Fragment set:html={renderTickerItems(data.items)} /> : <li class="text-muted">Carregando cotações…</li>}
+    </ul>
+    <span class="hidden sm:block shrink-0 text-xs text-muted" data-ticker-time title="Dados com atraso. Câmbio: referência diária do BCE.">
+      {data ? `Atualizado ${formatDateTimeBR(data.updatedAt)}` : ''}
+    </span>
+  </div>
+</div>
+
+<script>
+  import { DATA_URL, STALE_AFTER_MS, type TickerData } from '../lib/market';
+  import { formatRelative } from '../lib/format';
+  import { renderTickerItems } from '../lib/ticker';
+
+  const REFRESH_MS = 5 * 60 * 1000;
+
+  async function refresh() {
+    const root = document.querySelector<HTMLElement>('[data-ticker]');
+    if (!root) return;
+    try {
+      const res = await fetch(`${DATA_URL}/ticker.json`, { cache: 'no-cache' });
+      if (!res.ok) return;
+      const data: TickerData = await res.json();
+      root.querySelector('[data-ticker-list]')!.innerHTML = renderTickerItems(data.items);
+      const time = root.querySelector<HTMLElement>('[data-ticker-time]')!;
+      const stale = Date.now() - new Date(data.updatedAt).getTime() > STALE_AFTER_MS;
+      time.textContent = `${stale ? '⚠ ' : ''}Atualizado ${formatRelative(data.updatedAt)}`;
+      time.classList.toggle('text-warn', stale);
+    } catch {
+      // Mantém o que já está na tela.
+    }
+  }
+
+  refresh();
+  setInterval(() => document.visibilityState === 'visible' && refresh(), REFRESH_MS);
+</script>

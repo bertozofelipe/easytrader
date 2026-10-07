@@ -1,5 +1,7 @@
 # build output
 dist/
+# dados gerados localmente (publicados no branch `data` pelo GitHub Actions)
+.data-out/
 # generated types
 .astro/
 
