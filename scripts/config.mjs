@@ -1,4 +1,6 @@
-// Ativos coletados pelos jobs de dados. Editar aqui para incluir/remover.
+// Configuração dos coletores. A lista de ativos vem de src/data/assets.ts
+// (fonte única, compartilhada com o site).
+import { ASSETS } from '../src/data/assets.ts';
 
 export const REPO = 'bertozofelipe/easytrader';
 export const DATA_BRANCH = 'data';
@@ -7,30 +9,20 @@ export const PREVIOUS_DATA_URL = `https://raw.githubusercontent.com/${REPO}/${DA
 export const CRYPTO_TOP_N = 50;
 
 // Moedas que aparecem no ticker (ids da CoinGecko).
-export const TICKER_CRYPTO = ['bitcoin', 'ethereum', 'solana', 'binancecoin', 'ripple'];
+export const TICKER_CRYPTO = ASSETS.filter((a) => a.kind === 'crypto' && a.ticker).map((a) => a.coingecko);
 
-// Índices são representados por ETFs que os replicam (disponíveis no plano free da Finnhub).
-export const US_SYMBOLS = [
-  { symbol: 'SPY', name: 'S&P 500', kind: 'index', ticker: true },
-  { symbol: 'QQQ', name: 'Nasdaq 100', kind: 'index', ticker: true },
-  { symbol: 'DIA', name: 'Dow Jones', kind: 'index', ticker: false },
-  { symbol: 'IWM', name: 'Russell 2000', kind: 'index', ticker: false },
-  { symbol: 'GLD', name: 'Ouro', kind: 'commodity', ticker: true },
-  { symbol: 'USO', name: 'Petróleo WTI', kind: 'commodity', ticker: false },
-  { symbol: 'AAPL', name: 'Apple', kind: 'stock', ticker: false },
-  { symbol: 'MSFT', name: 'Microsoft', kind: 'stock', ticker: false },
-  { symbol: 'NVDA', name: 'Nvidia', kind: 'stock', ticker: false },
-  { symbol: 'AMZN', name: 'Amazon', kind: 'stock', ticker: false },
-  { symbol: 'GOOGL', name: 'Alphabet', kind: 'stock', ticker: false },
-  { symbol: 'META', name: 'Meta', kind: 'stock', ticker: false },
-  { symbol: 'TSLA', name: 'Tesla', kind: 'stock', ticker: false },
-];
+// Ações e ETFs dos EUA (Finnhub).
+export const US_SYMBOLS = ASSETS.filter((a) => ['index', 'commodity', 'stock'].includes(a.kind)).map((a) => ({
+  symbol: a.symbol,
+  name: a.name,
+  kind: a.kind,
+  ticker: Boolean(a.ticker),
+}));
 
-// Pares de moedas (fonte: BCE via Frankfurter, atualização diária).
-// invert = true quando a cotação é exibida como XXX/USD (ex.: EUR/USD).
-export const FX_PAIRS = [
-  { code: 'EUR', label: 'EUR/USD', invert: true, ticker: true },
-  { code: 'GBP', label: 'GBP/USD', invert: true, ticker: false },
-  { code: 'JPY', label: 'USD/JPY', invert: false, ticker: false },
-  { code: 'BRL', label: 'USD/BRL', invert: false, ticker: true },
-];
+// Pares de moedas (Frankfurter). invert = true quando exibido como XXX/USD.
+export const FX_PAIRS = ASSETS.filter((a) => a.kind === 'fx').map((a) => ({
+  code: a.fx.code,
+  label: a.symbol,
+  invert: a.fx.invert,
+  ticker: Boolean(a.ticker),
+}));

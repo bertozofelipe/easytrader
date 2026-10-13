@@ -1,7 +1,7 @@
 ---
 import { formatDateTimeBR } from '../lib/format';
 import { loadData, type TickerData } from '../lib/market';
-import { renderTickerItems } from '../lib/ticker';
+import { renderTickerItems } from '../lib/render';
 
 const data = await loadData<TickerData>('ticker');
 ---
@@ -20,7 +20,7 @@ const data = await loadData<TickerData>('ticker');
 <script>
   import { DATA_URL, STALE_AFTER_MS, type TickerData } from '../lib/market';
   import { formatRelative } from '../lib/format';
-  import { renderTickerItems } from '../lib/ticker';
+  import { renderTickerItems } from '../lib/render';
 
   const REFRESH_MS = 5 * 60 * 1000;
 

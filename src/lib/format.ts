@@ -1,22 +1,33 @@
-import type { AssetKind } from './market';
+import type { AssetKind } from '../data/assets';
 
 const nf = (min: number, max = min) =>
   new Intl.NumberFormat('pt-BR', { minimumFractionDigits: min, maximumFractionDigits: max });
 
-export function formatPrice(value: number, kind: AssetKind): string {
+export function formatPrice(value: number | null | undefined, kind: AssetKind): string {
+  if (value == null || Number.isNaN(value)) return '—';
   if (kind === 'fx') return nf(value >= 20 ? 2 : 4).format(value);
   if (value >= 10_000) return nf(0).format(value);
   if (value >= 1) return nf(2).format(value);
   return nf(4, 6).format(value);
 }
 
-export function formatPct(value: number | null): string {
+/** Valores grandes em dólar: US$ 2,91 tri / 85,3 bi / 120 mi. */
+export function formatUsdCompact(value: number | null | undefined): string {
+  if (value == null) return '—';
+  const abs = Math.abs(value);
+  if (abs >= 1e12) return `US$ ${nf(2).format(value / 1e12)} tri`;
+  if (abs >= 1e9) return `US$ ${nf(1).format(value / 1e9)} bi`;
+  if (abs >= 1e6) return `US$ ${nf(1).format(value / 1e6)} mi`;
+  return `US$ ${nf(0).format(value)}`;
+}
+
+export function formatPct(value: number | null | undefined, { signed = true } = {}): string {
   if (value == null || Number.isNaN(value)) return '—';
-  const sign = value > 0 ? '+' : '';
+  const sign = signed && value > 0 ? '+' : '';
   return `${sign}${nf(2).format(value)}%`;
 }
 
-export function trendClass(value: number | null): string {
+export function trendClass(value: number | null | undefined): string {
   if (value == null || value === 0) return 'text-muted';
   return value > 0 ? 'text-up' : 'text-down';
 }

@@ -1,0 +1,73 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import DataStamp from '../../components/DataStamp.astro';
+import type { AssetKind } from '../../data/assets';
+import { loadData, type CryptoData, type QuotesData } from '../../lib/market';
+import { collectRows, renderAssetRows } from '../../lib/render';
+
+const [us, fx, crypto] = await Promise.all([
+  loadData<QuotesData>('us'),
+  loadData<QuotesData>('fx'),
+  loadData<CryptoData>('crypto'),
+]);
+const rows = collectRows(us, fx, crypto);
+
+const GROUPS: { id: string; title: string; kinds: AssetKind[]; note: string }[] = [
+  { id: 'indices', title: 'Índices e commodities', kinds: ['index', 'commodity'], note: 'Via ETFs que replicam o índice ou a commodity (preço do ETF, não do índice).' },
+  { id: 'acoes', title: 'Ações dos EUA', kinds: ['stock'], note: 'Cotações com atraso.' },
+  { id: 'cambio', title: 'Câmbio', kinds: ['fx'], note: 'Referência diária do Banco Central Europeu.' },
+  { id: 'cripto', title: 'Cripto', kinds: ['crypto'], note: 'Variação em 24h. Painel completo em /cripto.' },
+];
+---
+
+<Layout title="Ativos" description="Índices, ações dos EUA, câmbio e criptomoedas com cotação, variação e gráfico.">
+  <PageHeader title="Ativos" subtitle="Escolha um ativo para ver gráfico, dados do dia e contexto." />
+
+  <div class="grid gap-6 md:grid-cols-2">
+    {GROUPS.map((g) => (
+      <section class="rounded-xl border border-border bg-surface p-5" id={g.id}>
+        <h2 class="font-semibold">{g.title}</h2>
+        <p class="text-xs text-muted mb-2">{g.note}</p>
+        <table class="w-full text-sm">
+          <thead class="sr-only"><tr><th>Ativo</th><th>Preço</th><th>Variação</th></tr></thead>
+          <tbody data-asset-group={g.id}>
+            <Fragment set:html={renderAssetRows(rows.filter((r) => g.kinds.includes(r.asset.kind)))} />
+          </tbody>
+        </table>
+      </section>
+    ))}
+  </div>
+
+  <div class="mt-4 flex flex-wrap gap-x-4">
+    <DataStamp name="us" updatedAt={us?.updatedAt} source="Finnhub, BCE (Frankfurter), CoinGecko" />
+  </div>
+</Layout>
+
+<script>
+  import type { AssetKind } from '../../data/assets';
+  import { fetchLatest, type CryptoData, type QuotesData } from '../../lib/market';
+  import { collectRows, renderAssetRows } from '../../lib/render';
+  import { every, REFRESH_MS, setHtml, setStamp } from '../../lib/live';
+
+  const GROUP_KINDS: Record<string, AssetKind[]> = {
+    indices: ['index', 'commodity'],
+    acoes: ['stock'],
+    cambio: ['fx'],
+    cripto: ['crypto'],
+  };
+
+  every(REFRESH_MS, async () => {
+    const [us, fx, crypto] = await Promise.all([
+      fetchLatest<QuotesData>('us'),
+      fetchLatest<QuotesData>('fx'),
+      fetchLatest<CryptoData>('crypto'),
+    ]);
+    if (!us && !fx && !crypto) return;
+    const rows = collectRows(us, fx, crypto);
+    for (const [id, kinds] of Object.entries(GROUP_KINDS)) {
+      setHtml(`[data-asset-group="${id}"]`, renderAssetRows(rows.filter((r) => kinds.includes(r.asset.kind))));
+    }
+    if (us) setStamp('us', us.updatedAt);
+  });
+</script>

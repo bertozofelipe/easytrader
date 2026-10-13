@@ -1,10 +1,81 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PageHeader from '../components/PageHeader.astro';
-import ComingSoon from '../components/ComingSoon.astro';
+import DataStamp from '../components/DataStamp.astro';
+import { loadData, type CryptoData, type SentimentData } from '../lib/market';
+import { renderCryptoKpis, renderCryptoRows, renderFearGreed, renderMovers } from '../lib/render';
+
+const [crypto, sentiment] = await Promise.all([loadData<CryptoData>('crypto'), loadData<SentimentData>('sentiment')]);
 ---
 
-<Layout title="Cripto" description="Painel do mercado cripto: top moedas, dominância do BTC e Fear & Greed.">
-  <PageHeader title="Cripto" subtitle="Panorama do mercado cripto em uma tela." />
-  <ComingSoon phase="Etapa 2" items={['Top 50 criptomoedas por valor de mercado', 'Dominância do Bitcoin', 'Índice de medo e ganância (Fear & Greed)', 'Maiores altas e baixas do dia']} />
+<Layout title="Cripto" description="Painel do mercado cripto: top 50 moedas, dominância do Bitcoin, índice de medo e ganância e maiores altas e baixas.">
+  <PageHeader title="Cripto" subtitle="Panorama do mercado cripto em uma tela. Preços em dólar (US$)." />
+
+  <section class="grid gap-4 grid-cols-2 lg:grid-cols-4" data-crypto-kpis aria-label="Indicadores do mercado">
+    {crypto && <Fragment set:html={renderCryptoKpis(crypto)} />}
+  </section>
+
+  <div class="grid gap-4 lg:grid-cols-3 mt-4">
+    <section class="rounded-xl border border-border bg-surface p-5">
+      <h2 class="font-semibold mb-1">Medo e ganância</h2>
+      <p class="text-xs text-muted mb-4">
+        Sentimento do mercado cripto de 0 (medo extremo) a 100 (ganância extrema).
+        <a href="/glossario#fear-and-greed" class="text-accent">O que é?</a>
+      </p>
+      <div data-fng>{sentiment && <Fragment set:html={renderFearGreed(sentiment)} />}</div>
+    </section>
+    <section class="rounded-xl border border-border bg-surface p-5">
+      <h2 class="font-semibold mb-2">Maiores altas (24h)</h2>
+      <ul class="text-sm" data-movers-up>{crypto && <Fragment set:html={renderMovers(crypto.coins, 'up')} />}</ul>
+    </section>
+    <section class="rounded-xl border border-border bg-surface p-5">
+      <h2 class="font-semibold mb-2">Maiores baixas (24h)</h2>
+      <ul class="text-sm" data-movers-down>{crypto && <Fragment set:html={renderMovers(crypto.coins, 'down')} />}</ul>
+    </section>
+  </div>
+
+  <section class="mt-8">
+    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+      <h2 class="text-xl font-semibold">Top 50 por valor de mercado</h2>
+      <DataStamp name="crypto" updatedAt={crypto?.updatedAt} source="CoinGecko" />
+    </div>
+    <div class="overflow-x-auto rounded-xl border border-border bg-surface px-4">
+      <table class="w-full text-sm">
+        <thead class="text-xs text-muted">
+          <tr>
+            <th class="py-3 pr-2 text-left font-medium">#</th>
+            <th class="py-3 pr-4 text-left font-medium">Moeda</th>
+            <th class="py-3 px-2 text-right font-medium">Preço</th>
+            <th class="py-3 px-2 text-right font-medium hidden md:table-cell">1h</th>
+            <th class="py-3 px-2 text-right font-medium">24h</th>
+            <th class="py-3 px-2 text-right font-medium hidden sm:table-cell">7d</th>
+            <th class="py-3 px-2 text-right font-medium hidden lg:table-cell">Valor de mercado</th>
+            <th class="py-3 px-2 text-right font-medium hidden lg:table-cell">Volume 24h</th>
+            <th class="py-3 pl-2 text-left font-medium hidden md:table-cell">7 dias</th>
+          </tr>
+        </thead>
+        <tbody data-crypto-rows>
+          {crypto ? <Fragment set:html={renderCryptoRows(crypto.coins)} /> : <tr><td colspan="9" class="py-6 text-center text-muted">Carregando…</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  </section>
 </Layout>
+
+<script>
+  import { fetchLatest, type CryptoData, type SentimentData } from '../lib/market';
+  import { renderCryptoKpis, renderCryptoRows, renderFearGreed, renderMovers } from '../lib/render';
+  import { every, REFRESH_MS, setHtml, setStamp } from '../lib/live';
+
+  every(REFRESH_MS, async () => {
+    const [crypto, sentiment] = await Promise.all([fetchLatest<CryptoData>('crypto'), fetchLatest<SentimentData>('sentiment')]);
+    if (crypto) {
+      setHtml('[data-crypto-kpis]', renderCryptoKpis(crypto));
+      setHtml('[data-crypto-rows]', renderCryptoRows(crypto.coins));
+      setHtml('[data-movers-up]', renderMovers(crypto.coins, 'up'));
+      setHtml('[data-movers-down]', renderMovers(crypto.coins, 'down'));
+      setStamp('crypto', crypto.updatedAt);
+    }
+    if (sentiment) setHtml('[data-fng]', renderFearGreed(sentiment));
+  });
+</script>

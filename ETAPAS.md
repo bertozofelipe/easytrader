@@ -25,14 +25,17 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Top 50 cripto + dados globais, Fear & Greed, câmbio (EUR, GBP, JPY, BRL)
 - ✅ Faixa de cotações em todas as páginas, atualizada no navegador a cada 5 min, com "atualizado há X min"
 - ✅ Finnhub ativa (secret `FINNHUB_API_KEY`): ETFs de índices, ouro, petróleo e 7 ações dos EUA
-- ⬜ Agendamento confiável: o cron do GitHub roda em média a cada ~5,5 h em vez de 15 min → disparar o workflow por um Cron Trigger do Cloudflare Worker
-- 👤 Criar *fine-grained token* do GitHub (só este repo, Actions: read/write) para o Worker
+- ✅ Worker com Cron Trigger pronto em `workers/data-trigger/` (o cron do GitHub rodava em média a cada ~5,5 h)
+- 👤 Criar *fine-grained token* do GitHub e publicar o Worker (passo a passo em `workers/data-trigger/README.md`)
 
-## Etapa 2 — Cripto e ativos ⬜ (~2 semanas)
+## Etapa 2 — Cripto e ativos ✅ (13/10/2026)
 
-- ⬜ Painel `/cripto`: top moedas, dominância BTC, Fear & Greed, maiores altas/baixas
-- ⬜ Lista `/ativos` com variação do dia
-- ⬜ Página por ativo `/ativos/[ticker]` com gráfico (Lightweight Charts)
+- ✅ Cadastro único de ativos em `src/data/assets.ts` (site e coletores usam a mesma lista)
+- ✅ Painel `/cripto`: valor de mercado, volume, dominância BTC/ETH, Fear & Greed com 30 dias, maiores altas/baixas, top 50 com mini-gráfico de 7 dias
+- ✅ Lista `/ativos` por grupo (índices/commodities, ações EUA, câmbio, cripto)
+- ✅ 29 páginas `/ativos/[slug]`: cotação e estatísticas; cripto com gráfico próprio (Lightweight Charts + candles da Binance, 1H/4H/1D/1S); ações, ETFs e câmbio com widget do TradingView
+- ✅ Itens da faixa de cotações levam à página do ativo
+- ✅ Tudo atualiza no navegador a cada 5 min
 
 ## Etapa 3 — Notícias e calendário ⬜ (~2 semanas)
 

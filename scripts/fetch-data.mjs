@@ -46,14 +46,14 @@ function buildTicker({ crypto, us, fx }) {
   const items = [];
   for (const q of us?.quotes ?? []) {
     // Preço é do ETF, não do índice: o rótulo deixa isso explícito.
-    if (q.ticker) items.push({ id: q.symbol, label: `${q.name} (${q.symbol})`, sub: `ETF ${q.symbol}`, price: q.price, changePct: q.changePct, kind: q.kind });
+    if (q.ticker) items.push({ id: q.symbol, slug: q.symbol.toLowerCase(), label: `${q.name} (${q.symbol})`, sub: `ETF ${q.symbol}`, price: q.price, changePct: q.changePct, kind: q.kind });
   }
   for (const id of TICKER_CRYPTO) {
     const c = crypto?.coins.find((x) => x.id === id);
-    if (c) items.push({ id: c.id, label: c.symbol, sub: c.name, price: c.price, changePct: c.change24h, kind: 'crypto' });
+    if (c) items.push({ id: c.id, slug: c.symbol.toLowerCase(), label: c.symbol, sub: c.name, price: c.price, changePct: c.change24h, kind: 'crypto' });
   }
   for (const q of fx?.quotes ?? []) {
-    if (q.ticker) items.push({ id: q.symbol, label: q.symbol, sub: 'Câmbio', price: q.price, changePct: q.changePct, kind: 'fx' });
+    if (q.ticker) items.push({ id: q.symbol, slug: q.symbol.replace('/', '').toLowerCase(), label: q.symbol, sub: 'Câmbio', price: q.price, changePct: q.changePct, kind: 'fx' });
   }
   return { updatedAt: new Date().toISOString(), items };
 }
