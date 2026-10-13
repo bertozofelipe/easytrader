@@ -17,15 +17,16 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Repositório público no GitHub: https://github.com/bertozofelipe/easytrader
 - ✅ Deploy automático no Cloudflare (Workers): https://easytrader.lf-bertozo.workers.dev
 
-## Etapa 1 — Núcleo de dados 🔄 (iniciada 06/10/2026)
+## Etapa 1 — Núcleo de dados ✅ (13/10/2026, resta o agendamento confiável)
 
 - ✅ `scripts/` com um *provider* por fonte: CoinGecko, alternative.me (Fear & Greed), Frankfurter (câmbio BCE), Finnhub (EUA)
 - ✅ GitHub Action a cada 15 min publicando os JSON no branch órfão `data` (1 commit, sem rebuild do site)
 - ✅ Fallback: se uma fonte falhar, reaproveita o último JSON publicado marcado como `stale`
 - ✅ Top 50 cripto + dados globais, Fear & Greed, câmbio (EUR, GBP, JPY, BRL)
 - ✅ Faixa de cotações em todas as páginas, atualizada no navegador a cada 5 min, com "atualizado há X min"
-- 👤 Criar conta gratuita na Finnhub e salvar a chave no secret `FINNHUB_API_KEY` (libera S&P 500, Nasdaq, ouro e ações)
-- ⬜ Confirmar a Finnhub em produção e fechar a etapa
+- ✅ Finnhub ativa (secret `FINNHUB_API_KEY`): ETFs de índices, ouro, petróleo e 7 ações dos EUA
+- ⬜ Agendamento confiável: o cron do GitHub roda em média a cada ~5,5 h em vez de 15 min → disparar o workflow por um Cron Trigger do Cloudflare Worker
+- 👤 Criar *fine-grained token* do GitHub (só este repo, Actions: read/write) para o Worker
 
 ## Etapa 2 — Cripto e ativos ⬜ (~2 semanas)
 

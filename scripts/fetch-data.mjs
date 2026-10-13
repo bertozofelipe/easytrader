@@ -45,7 +45,8 @@ async function collect(name, fn) {
 function buildTicker({ crypto, us, fx }) {
   const items = [];
   for (const q of us?.quotes ?? []) {
-    if (q.ticker) items.push({ id: q.symbol, label: q.name, sub: q.symbol, price: q.price, changePct: q.changePct, kind: q.kind });
+    // Preço é do ETF, não do índice: o rótulo deixa isso explícito.
+    if (q.ticker) items.push({ id: q.symbol, label: `${q.name} (${q.symbol})`, sub: `ETF ${q.symbol}`, price: q.price, changePct: q.changePct, kind: q.kind });
   }
   for (const id of TICKER_CRYPTO) {
     const c = crypto?.coins.find((x) => x.id === id);
