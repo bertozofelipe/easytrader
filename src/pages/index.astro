@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import WatchlistBox from '../components/WatchlistBox.astro';
 import { loadData, type NewsData, type SentimentData, type TickerData } from '../lib/market';
 import { pickHomeNews, renderFearGreedMini, renderMarketOverview, renderNewsItems } from '../lib/render';
 
@@ -43,6 +44,7 @@ const sections = [
     </section>
 
     <div class="flex flex-col gap-4">
+      <WatchlistBox hideEmpty />
       <section class="rounded-xl border border-border bg-surface px-5 py-4" aria-labelledby="mercado">
         <div class="flex items-baseline justify-between">
           <h2 id="mercado" class="font-semibold">Mercado agora</h2>

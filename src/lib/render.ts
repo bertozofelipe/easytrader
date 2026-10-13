@@ -164,10 +164,21 @@ export function collectRows(ds: Datasets): AssetRow[] {
   });
 }
 
-export function renderAssetRows(rows: AssetRow[]): string {
+const STAR_PATH = 'M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z';
+
+/** Botão de estrela da watchlist; o estado é ligado no navegador (lib/watchlist). */
+export const watchButton = (a: Asset, { label = false } = {}) =>
+  `<button type="button" data-watch="${a.slug}" data-watch-name="${escape(a.name)}" aria-pressed="false" aria-label="Adicionar ${escape(a.name)} à sua lista" title="Adicionar ${escape(a.name)} à sua lista" class="group inline-flex items-center gap-1.5 text-muted hover:text-warn aria-pressed:text-warn ${label ? 'rounded-full border border-border px-3 py-1 text-sm aria-pressed:border-warn/60' : 'p-1 -m-1'}">
+  <svg viewBox="0 0 24 24" class="w-4 h-4 fill-transparent group-aria-pressed:fill-current" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="${STAR_PATH}"/></svg>${
+    label ? '<span data-watch-label>Acompanhar</span>' : ''
+  }
+</button>`;
+
+export function renderAssetRows(rows: AssetRow[], { watch = false } = {}): string {
   return rows
     .map(
       ({ asset: a, price, changePct }) => `<tr class="border-t border-border hover:bg-surface-2/50">
+  ${watch ? `<td class="py-2 pr-2 w-6">${watchButton(a)}</td>` : ''}
   <td class="py-2 pr-4"><a href="/ativos/${a.slug}" class="hover:text-accent"><span class="font-medium">${escape(a.name)}</span> <span class="text-muted text-xs">${escape(a.symbol)}</span></a></td>
   <td class="py-2 px-2 text-right font-mono tabular-nums">${formatPrice(price, a.kind)}</td>
   <td class="py-2 pl-2 text-right">${pctSpan(changePct)}</td>

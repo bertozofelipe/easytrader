@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import DataStamp from '../../components/DataStamp.astro';
+import WatchlistBox from '../../components/WatchlistBox.astro';
 import { ASSET_GROUPS } from '../../data/assets';
 import { loadDatasets } from '../../lib/market';
 import { collectRows, renderAssetRows } from '../../lib/render';
@@ -11,7 +12,9 @@ const rows = collectRows(ds);
 ---
 
 <Layout title="Ativos" description="Índices, VIX, ações dos EUA, câmbio e criptomoedas com cotação, variação e gráfico.">
-  <PageHeader title="Ativos" subtitle="Escolha um ativo para ver gráfico, dados do dia e contexto." />
+  <PageHeader title="Ativos" subtitle="Escolha um ativo para ver gráfico, dados do dia e contexto. Use a estrela para montar a sua lista." />
+
+  <div class="mb-6"><WatchlistBox /></div>
 
   <div class="grid gap-6 md:grid-cols-2">
     {ASSET_GROUPS.map((g) => (
@@ -19,9 +22,9 @@ const rows = collectRows(ds);
         <h2 class="font-semibold">{g.title}</h2>
         <p class="text-xs text-muted mb-2">{g.note}</p>
         <table class="w-full text-sm">
-          <thead class="sr-only"><tr><th>Ativo</th><th>Preço</th><th>Variação</th></tr></thead>
+          <thead class="sr-only"><tr><th>Acompanhar</th><th>Ativo</th><th>Preço</th><th>Variação</th></tr></thead>
           <tbody data-asset-group={g.id}>
-            <Fragment set:html={renderAssetRows(rows.filter((r) => g.kinds.includes(r.asset.kind)))} />
+            <Fragment set:html={renderAssetRows(rows.filter((r) => g.kinds.includes(r.asset.kind)), { watch: true })} />
           </tbody>
         </table>
       </section>
@@ -38,14 +41,16 @@ const rows = collectRows(ds);
   import { fetchDatasets } from '../../lib/market';
   import { collectRows, renderAssetRows } from '../../lib/render';
   import { every, REFRESH_MS, setHtml, setStamp } from '../../lib/live';
+  import { syncWatchButtons } from '../../lib/watchlist';
 
   every(REFRESH_MS, async () => {
     const ds = await fetchDatasets();
     if (!Object.values(ds).some(Boolean)) return;
     const rows = collectRows(ds);
     for (const g of ASSET_GROUPS) {
-      setHtml(`[data-asset-group="${g.id}"]`, renderAssetRows(rows.filter((r) => g.kinds.includes(r.asset.kind))));
+      setHtml(`[data-asset-group="${g.id}"]`, renderAssetRows(rows.filter((r) => g.kinds.includes(r.asset.kind)), { watch: true }));
     }
+    syncWatchButtons();
     if (ds.us) setStamp('us', ds.us.updatedAt);
   });
 </script>

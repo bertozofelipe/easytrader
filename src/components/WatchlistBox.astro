@@ -1,0 +1,69 @@
+---
+// "Sua lista": ativos marcados com a estrela, lidos do localStorage e
+// renderizados no navegador (o build não conhece a lista de cada visitante).
+interface Props {
+  /** Esconde o bloco inteiro enquanto a lista estiver vazia (ex.: na home). */
+  hideEmpty?: boolean;
+}
+
+const { hideEmpty = false } = Astro.props;
+---
+
+<section class="rounded-xl border border-border bg-surface p-5" data-watchlist-box data-hide-empty={hideEmpty ? 'true' : undefined} hidden={hideEmpty}>
+  <div class="flex items-baseline justify-between gap-2">
+    <h2 class="font-semibold">Sua lista</h2>
+    <span class="text-xs text-muted">Salva só neste navegador</span>
+  </div>
+  <table class="w-full text-sm mt-2" data-watchlist-table hidden>
+    <thead class="sr-only"><tr><th>Acompanhar</th><th>Ativo</th><th>Preço</th><th>Variação</th></tr></thead>
+    <tbody data-watchlist-rows></tbody>
+  </table>
+  <p class="text-sm text-muted mt-2" data-watchlist-empty>
+    Nenhum ativo ainda. Toque na estrela ao lado de um ativo para acompanhá-lo aqui.
+  </p>
+</section>
+
+<script>
+  import { assetBySlug, datasetFor } from '../data/assets';
+  import { fetchDatasets, type Datasets } from '../lib/market';
+  import { collectRows, renderAssetRows } from '../lib/render';
+  import { every, REFRESH_MS } from '../lib/live';
+  import { bindWatchButtons, getWatchlist, onWatchlistChange, syncWatchButtons } from '../lib/watchlist';
+
+  const box = document.querySelector<HTMLElement>('[data-watchlist-box]');
+
+  if (box) {
+    const table = box.querySelector<HTMLElement>('[data-watchlist-table]')!;
+    const tbody = box.querySelector<HTMLElement>('[data-watchlist-rows]')!;
+    const empty = box.querySelector<HTMLElement>('[data-watchlist-empty]')!;
+    const hideEmpty = box.dataset.hideEmpty === 'true';
+    let ds: Datasets = {};
+
+    const render = (list: string[]) => {
+      box.hidden = hideEmpty && list.length === 0;
+      table.hidden = list.length === 0;
+      empty.hidden = list.length > 0;
+      const bySlug = new Map(collectRows(ds).map((r) => [r.asset.slug, r]));
+      tbody.innerHTML = renderAssetRows(list.map((s) => bySlug.get(s)!).filter(Boolean), { watch: true });
+      syncWatchButtons();
+    };
+
+    async function refresh() {
+      const names = [...new Set(getWatchlist().map((s) => datasetFor(assetBySlug(s)!)))];
+      if (names.length) ds = { ...ds, ...(await fetchDatasets(names)) };
+      render(getWatchlist());
+    }
+
+    let loaded = false;
+    bindWatchButtons();
+    onWatchlistChange((list) => {
+      render(list);
+      // Ativo de um arquivo de dados que ainda não foi baixado: busca.
+      if (loaded && list.some((s) => !ds[datasetFor(assetBySlug(s)!)])) refresh();
+    });
+    every(REFRESH_MS, async () => {
+      await refresh();
+      loaded = true;
+    });
+  }
+</script>

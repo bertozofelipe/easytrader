@@ -6,7 +6,7 @@ import TechnicalReading from '../../components/TechnicalReading.astro';
 import TradingViewChart from '../../components/TradingViewChart.astro';
 import { ASSETS, datasetFor, kindLabel, type Asset } from '../../data/assets';
 import { loadDatasets } from '../../lib/market';
-import { renderAssetQuote } from '../../lib/render';
+import { renderAssetQuote, watchButton } from '../../lib/render';
 
 export function getStaticPaths() {
   return ASSETS.map((asset) => ({ params: { slug: asset.slug }, props: { asset } }));
@@ -41,6 +41,7 @@ const about = asset.about ?? ABOUT[asset.kind];
       <h1 class="text-3xl font-bold tracking-tight">{asset.name}</h1>
       <span class="text-muted font-mono">{asset.symbol}</span>
       <span class="text-xs rounded-full border border-border px-2 py-0.5 text-muted">{kindLabel(asset)}</span>
+      <span class="sm:ml-auto"><Fragment set:html={watchButton(asset, { label: true })} /></span>
     </div>
     <div class="mt-4" data-asset-quote data-slug={asset.slug}>
       <Fragment set:html={renderAssetQuote(asset, ds)} />
@@ -71,6 +72,9 @@ const about = asset.about ?? ABOUT[asset.kind];
   import { fetchDatasets } from '../../lib/market';
   import { renderAssetQuote } from '../../lib/render';
   import { every, REFRESH_MS, setStamp } from '../../lib/live';
+  import { bindWatchButtons } from '../../lib/watchlist';
+
+  bindWatchButtons();
 
   const box = document.querySelector<HTMLElement>('[data-asset-quote]');
   const asset = box && assetBySlug(box.dataset.slug!);

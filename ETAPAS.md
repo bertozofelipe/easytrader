@@ -54,12 +54,13 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ `/indicadores` com 8 guias: médias móveis, RSI, MACD, Bollinger, estocástico, ATR, volume, suporte e resistência
 - ✅ VIX (Cboe, pontos do índice, 15 min de atraso) em "Índices e commodities"
 
-## Etapa 5 — Escola v1 e ferramentas ⬜ (~3 semanas, conteúdo pode andar em paralelo)
+## Etapa 5 — Escola v1 e ferramentas 🔄 (ferramentas prontas em 13/10/2026)
 
 - ⬜ Trilha "Fundamentos" com 8–10 aulas
 - ⬜ Glossário com ~50 termos
-- ⬜ Calculadora de tamanho de posição / risco-retorno
-- ⬜ Watchlist salva no navegador
+- ✅ `/ferramentas`: calculadora de tamanho de posição e risco-retorno (compra ou venda pelo lado do stop, exposição/alavancagem, acerto mínimo para empatar, preenche a entrada com a cotação de qualquer ativo do cadastro; lembra capital e risco)
+- ✅ Watchlist no navegador: estrela nas listas de `/ativos` e botão "Acompanhar" na página do ativo; bloco "Sua lista" em `/ativos` e na home (só aparece se tiver ativos), sincronizado entre abas
+- ⬜ Opcional: conversor de moedas/cripto e calculadora de pip
 
 ## Etapa 6 — Lançamento ⬜ (~1 semana)
 
