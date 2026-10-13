@@ -1,10 +1,19 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { loadData, type NewsData, type SentimentData, type TickerData } from '../lib/market';
+import { pickHomeNews, renderFearGreedMini, renderMarketOverview, renderNewsItems } from '../lib/render';
+
+const [ticker, news, sentiment] = await Promise.all([
+  loadData<TickerData>('ticker'),
+  loadData<NewsData>('news'),
+  loadData<SentimentData>('sentiment'),
+]);
+
 
 const sections = [
   { href: '/noticias', title: 'Notícias', desc: 'O que move o mercado hoje: macro, ações, forex, commodities e cripto.' },
   { href: '/calendario', title: 'Calendário econômico', desc: 'Payroll, CPI, juros e outros eventos com horário de Brasília e nível de impacto.' },
-  { href: '/ativos', title: 'Ativos', desc: 'Gráficos, variação e resumo técnico de índices, ações, moedas e commodities.' },
+  { href: '/ativos', title: 'Ativos', desc: 'Gráficos, variação e dados do dia de índices, ações, moedas e cripto.' },
   { href: '/cripto', title: 'Cripto', desc: 'Top moedas, dominância do BTC e índice de medo e ganância.' },
   { href: '/indicadores', title: 'Indicadores técnicos', desc: 'RSI, MACD, médias móveis, Bollinger e outros, explicados de forma simples.' },
   { href: '/escola', title: 'Escola', desc: 'Do zero ao primeiro trade: fundamentos, análise técnica, gestão de risco e psicologia.' },
@@ -14,22 +23,55 @@ const sections = [
 ---
 
 <Layout>
-  <section class="py-10 md:py-16">
-    <p class="text-sm uppercase tracking-wider text-accent mb-3">Mercado global e cripto</p>
-    <h1 class="text-4xl md:text-5xl font-bold tracking-tight max-w-3xl">
-      O dia a dia do trader em um só lugar.
-    </h1>
-    <p class="text-lg text-muted mt-4 max-w-2xl">
+  <section class="py-6 md:py-10">
+    <p class="text-sm uppercase tracking-wider text-accent mb-2">Mercado global e cripto</p>
+    <h1 class="text-3xl md:text-4xl font-bold tracking-tight max-w-3xl">O dia a dia do trader em um só lugar.</h1>
+    <p class="text-muted mt-3 max-w-2xl">
       Notícias, calendário econômico, análise de ativos e uma escola para quem está começando. Em português e gratuito.
     </p>
-    <div class="mt-6 flex flex-wrap gap-3">
-      <a href="/escola" class="px-4 py-2 rounded-lg bg-accent text-white font-medium hover:opacity-90">Começar a aprender</a>
-      <a href="/calendario" class="px-4 py-2 rounded-lg border border-border hover:bg-surface-2">Ver o calendário</a>
-    </div>
   </section>
 
-  <section aria-labelledby="secoes">
-    <h2 id="secoes" class="sr-only">Seções</h2>
+  <div class="grid gap-4 lg:grid-cols-3">
+    <section class="lg:col-span-2 rounded-xl border border-border bg-surface px-5 py-4" aria-labelledby="ultimas">
+      <div class="flex items-baseline justify-between">
+        <h2 id="ultimas" class="font-semibold">Últimas notícias</h2>
+        <a href="/noticias" class="text-sm text-accent">Ver todas</a>
+      </div>
+      <ul class="mt-1" data-home-news>
+        {news ? <Fragment set:html={renderNewsItems(pickHomeNews(news.items), { compact: true })} /> : <li class="py-4 text-muted">Carregando…</li>}
+      </ul>
+    </section>
+
+    <div class="flex flex-col gap-4">
+      <section class="rounded-xl border border-border bg-surface px-5 py-4" aria-labelledby="mercado">
+        <div class="flex items-baseline justify-between">
+          <h2 id="mercado" class="font-semibold">Mercado agora</h2>
+          <a href="/ativos" class="text-sm text-accent">Ativos</a>
+        </div>
+        <ul class="mt-2 text-sm" data-home-market>
+          {ticker && <Fragment set:html={renderMarketOverview(ticker.items)} />}
+        </ul>
+      </section>
+
+      <section class="rounded-xl border border-border bg-surface px-5 py-4" aria-labelledby="sentimento">
+        <div class="flex items-baseline justify-between">
+          <h2 id="sentimento" class="font-semibold">Medo e ganância (cripto)</h2>
+          <a href="/cripto" class="text-sm text-accent">Painel</a>
+        </div>
+        <p class="mt-2 flex items-baseline gap-3" data-home-fng>
+          {sentiment && <Fragment set:html={renderFearGreedMini(sentiment)} />}
+        </p>
+      </section>
+
+      <a href="/calendario" class="group rounded-xl border border-border bg-surface px-5 py-4 hover:border-accent/60 transition-colors">
+        <h2 class="font-semibold group-hover:text-accent">Agenda do dia</h2>
+        <p class="text-sm text-muted mt-1">Confira os eventos econômicos de hoje antes de operar.</p>
+      </a>
+    </div>
+  </div>
+
+  <section aria-labelledby="secoes" class="mt-10">
+    <h2 id="secoes" class="text-xl font-semibold mb-4">Explore</h2>
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {sections.map((s) => (
         <a href={s.href} class="group rounded-xl border border-border bg-surface p-5 hover:border-accent/60 transition-colors">
@@ -40,3 +82,20 @@ const sections = [
     </div>
   </section>
 </Layout>
+
+<script>
+  import { fetchLatest, type NewsData, type SentimentData, type TickerData } from '../lib/market';
+  import { pickHomeNews, renderFearGreedMini, renderMarketOverview, renderNewsItems } from '../lib/render';
+  import { every, REFRESH_MS, setHtml } from '../lib/live';
+
+  every(REFRESH_MS, async () => {
+    const [ticker, news, sentiment] = await Promise.all([
+      fetchLatest<TickerData>('ticker'),
+      fetchLatest<NewsData>('news'),
+      fetchLatest<SentimentData>('sentiment'),
+    ]);
+    if (news) setHtml('[data-home-news]', renderNewsItems(pickHomeNews(news.items), { now: Date.now(), compact: true }));
+    if (ticker) setHtml('[data-home-market]', renderMarketOverview(ticker.items));
+    if (sentiment) setHtml('[data-home-fng]', renderFearGreedMini(sentiment));
+  });
+</script>

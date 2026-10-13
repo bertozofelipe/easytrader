@@ -40,6 +40,7 @@ O workflow [`data.yml`](.github/workflows/data.yml) roda a cada 15 min, executa 
 | `sentiment.json` | Fear & Greed (30 dias) | alternative.me |
 | `fx.json` | EUR/USD, GBP/USD, USD/JPY, USD/BRL (diário) | BCE via Frankfurter |
 | `us.json` | ETFs de índices, ouro, petróleo e ações dos EUA | Finnhub (requer chave) |
+| `news.json` | Notícias das últimas 48 h (título, trecho, link) | RSS, feeds em [`scripts/feeds.mjs`](scripts/feeds.mjs) |
 | `ticker.json` | Itens da faixa de cotações | derivado dos anteriores |
 | `status.json` | Situação de cada coleta | — |
 

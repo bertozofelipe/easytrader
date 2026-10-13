@@ -1,8 +1,8 @@
 // Renderizadores em string usados no build (set:html) e no navegador ao
 // atualizar os dados, para manter um único markup por bloco.
 import { ASSETS, assetByCoingecko, type Asset } from '../data/assets';
-import { formatPct, formatPrice, formatUsdCompact, trendClass } from './format';
-import type { Coin, CryptoData, QuotesData, SentimentData, TickerItem } from './market';
+import { formatDateTimeBR, formatPct, formatPrice, formatRelative, formatUsdCompact, trendClass } from './format';
+import type { Coin, CryptoData, NewsCategory, NewsItem, QuotesData, SentimentData, TickerItem } from './market';
 
 export const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -210,4 +210,62 @@ export function renderAssetQuote(asset: Asset, us: QuotesData | null, fx: Quotes
   ${pctSpan(q.changePct, 'text-lg')} <span class="text-xs text-muted">no dia</span>
 </div>
 <dl class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 text-sm">${stats.join('')}</dl>`;
+}
+
+// ---------- Notícias ----------
+
+export const NEWS_CATEGORY_LABEL: Record<NewsCategory, string> = {
+  mercados: 'Mercados globais',
+  brasil: 'Brasil',
+  forex: 'Forex',
+  cripto: 'Cripto',
+};
+
+/** `now` presente = tempo relativo (navegador); ausente = data/hora fixa (build). */
+export function renderNewsItems(items: NewsItem[], { now, compact = false }: { now?: number; compact?: boolean } = {}): string {
+  return items
+    .map((n) => {
+      const when = now ? formatRelative(n.date, now) : formatDateTimeBR(n.date);
+      return `<li class="py-3 border-t border-border first:border-t-0" data-category="${n.category}" data-lang="${n.lang}">
+  <p class="text-xs text-muted flex flex-wrap items-center gap-x-2">
+    <span class="text-accent">${escape(NEWS_CATEGORY_LABEL[n.category])}</span>
+    <span>${escape(n.source)}</span>
+    ${n.lang === 'en' ? '<span class="rounded border border-border px-1 text-[10px]">EN</span>' : ''}
+    <time datetime="${n.date}">${when}</time>
+  </p>
+  <a href="${escape(n.link)}" target="_blank" rel="noopener nofollow" class="block mt-1 font-medium leading-snug hover:text-accent">${escape(n.title)}</a>
+  ${!compact && n.summary ? `<p class="text-sm text-muted mt-1 line-clamp-2">${escape(n.summary)}</p>` : ''}
+</li>`;
+    })
+    .join('');
+}
+
+// ---------- Home ----------
+
+export function renderMarketOverview(items: TickerItem[]): string {
+  return items
+    .map((i) => {
+      const body = `<span><span class="font-medium">${escape(i.label)}</span></span>
+  <span class="text-right"><span class="font-mono tabular-nums">${formatPrice(i.price, i.kind)}</span> ${pctSpan(i.changePct, 'text-xs ml-1 inline-block w-16')}</span>`;
+      return `<li>${
+        i.slug
+          ? `<a href="/ativos/${i.slug}" class="flex items-center justify-between gap-2 py-1.5 hover:text-accent">${body}</a>`
+          : `<span class="flex items-center justify-between gap-2 py-1.5">${body}</span>`
+      }</li>`;
+    })
+    .join('');
+}
+
+export function renderFearGreedMini(data: SentimentData): string {
+  const { value, label } = data.current;
+  return `<span class="text-3xl font-bold tabular-nums" style="color:${fngColor(value)}">${value}</span>
+<span class="font-medium">${escape(label)}</span>`;
+}
+
+/** Notícias da home: metade em português e metade em inglês, mais recentes primeiro. */
+export function pickHomeNews(items: NewsItem[], n = 8): NewsItem[] {
+  const half = Math.ceil(n / 2);
+  const pt = items.filter((i) => i.lang === 'pt').slice(0, half);
+  const en = items.filter((i) => i.lang !== 'pt').slice(0, n - pt.length);
+  return [...pt, ...en].sort((a, b) => b.date.localeCompare(a.date));
 }

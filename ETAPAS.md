@@ -37,11 +37,13 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Itens da faixa de cotações levam à página do ativo
 - ✅ Tudo atualiza no navegador a cada 5 min
 
-## Etapa 3 — Notícias e calendário ⬜ (~2 semanas)
+## Etapa 3 — Notícias e calendário ✅ (13/10/2026)
 
-- ⬜ Coletor de RSS → `data/noticias.json`, com filtros por categoria
-- ⬜ Calendário econômico (widget TradingView) + explicação dos eventos principais
-- ⬜ Destaques do dia na home
+- ✅ Coletor de RSS sem dependências → `news.json` (10 feeds: 4 em português, 6 em inglês; últimas 48 h; sem duplicadas)
+- ✅ `/noticias` com filtros por categoria (mercados globais, Brasil, forex, cripto) e idioma, lembrados no navegador
+- ✅ `/calendario` com widget do TradingView (EUA, zona do euro, Reino Unido, Japão, China, Brasil) + guia de 9 eventos (Payroll, CPI, FOMC, PCE, PIB, PMI, seguro-desemprego, BCE, Copom)
+- ✅ Home com destaques do dia: últimas notícias (metade em português), mercado agora, medo e ganância, atalho para a agenda
+- ⬜ Opcional: fonte de forex em português
 
 ## Etapa 4 — Indicadores técnicos ⬜ (~2 semanas)
 

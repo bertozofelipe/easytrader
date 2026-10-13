@@ -112,3 +112,21 @@ export async function fetchLatest<T>(name: string): Promise<T | null> {
 }
 
 export const isStale = (iso: string) => Date.now() - new Date(iso).getTime() > STALE_AFTER_MS;
+
+export type NewsCategory = 'mercados' | 'brasil' | 'forex' | 'cripto';
+
+export interface NewsItem {
+  title: string;
+  link: string;
+  summary: string;
+  image: string | null;
+  date: string;
+  source: string;
+  category: NewsCategory;
+  lang: 'pt' | 'en';
+}
+
+export interface NewsData extends Dataset {
+  failed: string[];
+  items: NewsItem[];
+}

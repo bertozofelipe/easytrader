@@ -1,0 +1,25 @@
+---
+// Embed genérico de widgets gratuitos do TradingView.
+// O script do TradingView força height:100% no contêiner, então a altura fica no elemento de fora.
+interface Props {
+  /** Nome do script, ex.: "advanced-chart", "events". */
+  widget: string;
+  config: Record<string, unknown>;
+  height: number;
+  attribution: { href: string; label: string };
+}
+
+const { widget, config, height, attribution } = Astro.props;
+---
+
+<div class="rounded-xl border border-border bg-surface p-3">
+  <div style={`height:${height}px`}>
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script is:inline type="text/javascript" src={`https://s3.tradingview.com/external-embedding/embed-widget-${widget}.js`} async set:html={JSON.stringify(config)} />
+    </div>
+  </div>
+  <p class="text-xs text-muted mt-2">
+    <a href={attribution.href} rel="noopener nofollow" target="_blank" class="hover:text-text">{attribution.label}</a>
+  </p>
+</div>
