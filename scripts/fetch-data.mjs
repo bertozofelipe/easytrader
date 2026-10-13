@@ -13,6 +13,8 @@ import { fetchCrypto } from './providers/coingecko.mjs';
 import { fetchFearGreed } from './providers/alternative.mjs';
 import { fetchFx } from './providers/frankfurter.mjs';
 import { fetchUsQuotes } from './providers/finnhub.mjs';
+import { fetchNews } from './providers/rss.mjs';
+import { FEEDS, NEWS_MAX_AGE_HOURS, NEWS_MAX_TOTAL, NEWS_PER_FEED } from './feeds.mjs';
 
 const outFlag = process.argv.indexOf('--out');
 const OUT_DIR = outFlag > -1 ? process.argv[outFlag + 1] : '.data-out';
@@ -22,6 +24,7 @@ const DATASETS = {
   sentiment: () => fetchFearGreed(),
   fx: () => fetchFx(FX_PAIRS),
   us: () => fetchUsQuotes(US_SYMBOLS),
+  news: () => fetchNews(FEEDS, { maxAgeHours: NEWS_MAX_AGE_HOURS, perFeed: NEWS_PER_FEED, maxTotal: NEWS_MAX_TOTAL }),
 };
 
 async function collect(name, fn) {
