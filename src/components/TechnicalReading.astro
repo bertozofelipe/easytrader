@@ -1,0 +1,74 @@
+---
+// Leitura dos indicadores no gráfico diário. Educacional: descreve o que cada
+// indicador mostra, sem sinal de compra ou venda.
+interface Props {
+  pair: string;
+}
+
+const { pair } = Astro.props;
+---
+
+<section class="rounded-xl border border-border bg-surface p-5" data-tech-reading data-pair={pair} aria-labelledby="leitura">
+  <div class="flex flex-wrap items-baseline justify-between gap-2">
+    <h2 id="leitura" class="font-semibold">Leitura dos indicadores (diário)</h2>
+    <a href="/indicadores" class="text-sm text-accent">Como interpretar</a>
+  </div>
+  <p class="text-xs text-muted mt-1">
+    Calculado no fechamento dos candles diários da Binance. Mostra o que cada indicador está dizendo agora — não é recomendação de
+    compra ou venda.
+  </p>
+  <div class="mt-4" data-tech-body>
+    <p class="text-sm text-muted">Calculando…</p>
+  </div>
+</section>
+
+<script>
+  import { readIndicators, type Bias } from '../lib/indicators';
+  import { escape } from '../lib/render';
+
+  const BIAS: Record<Bias, { label: string; cls: string }> = {
+    alta: { label: 'Viés de alta', cls: 'text-up border-up/40 bg-up/10' },
+    baixa: { label: 'Viés de baixa', cls: 'text-down border-down/40 bg-down/10' },
+    neutro: { label: 'Neutro', cls: 'text-muted border-border bg-surface-2' },
+  };
+
+  const GUIDE: Record<string, string> = { sma20: 'medias-moveis', sma50: 'medias-moveis', sma200: 'medias-moveis', rsi: 'rsi', macd: 'macd', bollinger: 'bandas-de-bollinger' };
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-tech-reading]')) {
+    const body = root.querySelector<HTMLElement>('[data-tech-body]')!;
+    (async () => {
+      try {
+        const res = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${root.dataset.pair}&interval=1d&limit=500`);
+        if (!res.ok) throw new Error(String(res.status));
+        const rows: [number, string, string, string, string][] = await res.json();
+        const readings = readIndicators(rows.map((r) => +r[4]));
+        const count = (b: Bias) => readings.filter((r) => r.bias === b).length;
+
+        body.innerHTML = `
+<p class="text-sm mb-3">
+  <span class="text-up font-medium">${count('alta')} com viés de alta</span> ·
+  <span class="text-down font-medium">${count('baixa')} com viés de baixa</span> ·
+  <span class="text-muted font-medium">${count('neutro')} neutros</span>
+</p>
+<ul class="divide-y divide-border">
+${readings
+  .map(
+    (r) => `<li class="py-2.5 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+  <div class="min-w-0">
+    <a href="/indicadores/${GUIDE[r.id]}" class="font-medium hover:text-accent">${escape(r.label)}</a>
+    <p class="text-xs text-muted">${escape(r.explanation)}</p>
+  </div>
+  <div class="flex items-center gap-3 shrink-0">
+    <span class="font-mono tabular-nums text-sm">${escape(r.value)}</span>
+    <span class="text-xs rounded-full border px-2 py-0.5 ${BIAS[r.bias].cls}">${BIAS[r.bias].label}</span>
+  </div>
+</li>`,
+  )
+  .join('')}
+</ul>`;
+      } catch {
+        body.innerHTML = '<p class="text-sm text-muted">Não foi possível calcular agora.</p>';
+      }
+    })();
+  }
+</script>

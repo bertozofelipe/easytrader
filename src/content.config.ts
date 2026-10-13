@@ -22,4 +22,17 @@ const glossario = defineCollection({
   }),
 });
 
-export const collections = { escola, glossario };
+const indicadores = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/indicadores' }),
+  schema: z.object({
+    title: z.string(),
+    sigla: z.string(),
+    description: z.string(),
+    tipo: z.enum(['Tendência', 'Momento', 'Volatilidade', 'Volume', 'Níveis de preço']),
+    ordem: z.number(),
+    /** Disponível no gráfico próprio do Easytrader (ativos cripto). */
+    noGrafico: z.boolean().default(false),
+  }),
+});
+
+export const collections = { escola, glossario, indicadores };

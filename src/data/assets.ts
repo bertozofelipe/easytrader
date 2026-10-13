@@ -19,6 +19,10 @@ export interface Asset {
   ticker?: boolean;
   /** Para índices/commodities via ETF: o que o ETF replica. */
   tracks?: string;
+  /** Símbolo na Cboe para índices calculados por ela (ex.: _VIX). */
+  cboe?: string;
+  /** Texto "Sobre" específico (substitui o texto padrão do tipo). */
+  about?: string;
   /** Código da moeda na Frankfurter e se a cotação é XXX/USD. */
   fx?: { code: string; invert: boolean };
 }
@@ -38,6 +42,7 @@ export const ASSETS: Asset[] = [
   { slug: 'spy', name: 'S&P 500', symbol: 'SPY', kind: 'index', tv: 'AMEX:SPY', tracks: 'S&P 500', ticker: true },
   { slug: 'qqq', name: 'Nasdaq 100', symbol: 'QQQ', kind: 'index', tv: 'NASDAQ:QQQ', tracks: 'Nasdaq 100', ticker: true },
   { slug: 'dia', name: 'Dow Jones', symbol: 'DIA', kind: 'index', tv: 'AMEX:DIA', tracks: 'Dow Jones Industrial Average' },
+  { slug: 'vix', name: 'Índice de volatilidade', symbol: 'VIX', kind: 'index', cboe: '_VIX', tv: 'TVC:VIX', about: 'O VIX é calculado pela Cboe a partir dos preços das opções do S&P 500 e mede a volatilidade que o mercado espera para os próximos 30 dias. É conhecido como "índice do medo" porque costuma subir quando as ações caem: abaixo de 20 indica mercado calmo; acima de 30, estresse elevado. Os valores são pontos do índice, com 15 minutos de atraso.' },
   { slug: 'iwm', name: 'Russell 2000', symbol: 'IWM', kind: 'index', tv: 'AMEX:IWM', tracks: 'Russell 2000' },
   { slug: 'gld', name: 'Ouro', symbol: 'GLD', kind: 'commodity', tv: 'AMEX:GLD', tracks: 'preço do ouro', ticker: true },
   { slug: 'uso', name: 'Petróleo WTI', symbol: 'USO', kind: 'commodity', tv: 'AMEX:USO', tracks: 'petróleo WTI' },
@@ -80,5 +85,31 @@ export const KIND_LABEL: Record<AssetKind, string> = {
   crypto: 'Cripto',
 };
 
+export type DatasetName = 'us' | 'fx' | 'crypto' | 'cboe';
+
+/** Em qual arquivo de dados está a cotação do ativo. */
+export function datasetFor(a: Asset): DatasetName {
+  if (a.kind === 'crypto') return 'crypto';
+  if (a.kind === 'fx') return 'fx';
+  if (a.cboe) return 'cboe';
+  return 'us';
+}
+
+/** Rótulo do tipo; índices da Cboe são o próprio índice, não um ETF. */
+export const kindLabel = (a: Asset) => (a.cboe ? 'Índice' : KIND_LABEL[a.kind]);
+
 export const assetBySlug = (slug: string) => ASSETS.find((a) => a.slug === slug);
 export const assetByCoingecko = (id: string) => ASSETS.find((a) => a.coingecko === id);
+
+/** Agrupamento da página /ativos. */
+export const ASSET_GROUPS: { id: string; title: string; kinds: AssetKind[]; note: string }[] = [
+  {
+    id: 'indices',
+    title: 'Índices e commodities',
+    kinds: ['index', 'commodity'],
+    note: 'VIX direto da Cboe; os demais via ETFs que replicam o índice ou a commodity (preço do ETF, não do índice).',
+  },
+  { id: 'acoes', title: 'Ações dos EUA', kinds: ['stock'], note: 'Cotações com atraso.' },
+  { id: 'cambio', title: 'Câmbio', kinds: ['fx'], note: 'Referência diária do Banco Central Europeu.' },
+  { id: 'cripto', title: 'Cripto', kinds: ['crypto'], note: 'Variação em 24h. Painel completo em /cripto.' },
+];

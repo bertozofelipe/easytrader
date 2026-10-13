@@ -7,13 +7,14 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { CRYPTO_TOP_N, FX_PAIRS, PREVIOUS_DATA_URL, TICKER_CRYPTO, US_SYMBOLS } from './config.mjs';
+import { CBOE_ASSETS, CRYPTO_TOP_N, FX_PAIRS, PREVIOUS_DATA_URL, TICKER_CRYPTO, US_SYMBOLS } from './config.mjs';
 import { getJson } from './lib/http.mjs';
 import { fetchCrypto } from './providers/coingecko.mjs';
 import { fetchFearGreed } from './providers/alternative.mjs';
 import { fetchFx } from './providers/frankfurter.mjs';
 import { fetchUsQuotes } from './providers/finnhub.mjs';
 import { fetchNews } from './providers/rss.mjs';
+import { fetchCboeIndices } from './providers/cboe.mjs';
 import { FEEDS, NEWS_MAX_AGE_HOURS, NEWS_MAX_TOTAL, NEWS_PER_FEED } from './feeds.mjs';
 
 const outFlag = process.argv.indexOf('--out');
@@ -24,6 +25,7 @@ const DATASETS = {
   sentiment: () => fetchFearGreed(),
   fx: () => fetchFx(FX_PAIRS),
   us: () => fetchUsQuotes(US_SYMBOLS),
+  cboe: () => fetchCboeIndices(CBOE_ASSETS),
   news: () => fetchNews(FEEDS, { maxAgeHours: NEWS_MAX_AGE_HOURS, perFeed: NEWS_PER_FEED, maxTotal: NEWS_MAX_TOTAL }),
 };
 

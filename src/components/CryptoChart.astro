@@ -1,6 +1,8 @@
 ---
-// Gráfico de candles com volume (Lightweight Charts) alimentado pela API
-// pública de dados de mercado da Binance, direto do navegador.
+// Gráfico de candles com volume e indicadores (Lightweight Charts), alimentado
+// pela API pública de dados de mercado da Binance, direto do navegador.
+import { INDICATOR_TOGGLES } from '../lib/indicator-toggles';
+
 interface Props {
   pair: string;
 }
@@ -16,7 +18,7 @@ const INTERVALS = [
 ---
 
 <div class="rounded-xl border border-border bg-surface p-3" data-crypto-chart data-pair={pair}>
-  <div class="flex items-center justify-between gap-2 mb-2">
+  <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
     <div class="flex gap-1" role="group" aria-label="Tempo gráfico">
       {INTERVALS.map((i) => (
         <button type="button" data-interval={i.id} class="px-2.5 py-1 rounded-md text-xs text-muted hover:text-text aria-pressed:bg-surface-2 aria-pressed:text-text" aria-pressed={i.id === '1d' ? 'true' : 'false'}>
@@ -26,17 +28,43 @@ const INTERVALS = [
     </div>
     <span class="text-xs text-muted">{pair} · Binance · horário de Brasília</span>
   </div>
-  <div class="h-[420px] relative" data-chart-el>
-    <p class="absolute inset-0 grid place-items-center text-sm text-muted" data-chart-msg>Carregando gráfico…</p>
+
+  <div class="flex flex-wrap items-center gap-1.5 mb-2" role="group" aria-label="Indicadores">
+    {INDICATOR_TOGGLES.map((t) => (
+      <span class="inline-flex items-center rounded-md border border-border text-xs overflow-hidden">
+        <button type="button" data-indicator={t.id} aria-pressed="false" class="flex items-center gap-1.5 px-2 py-1 text-muted hover:text-text aria-pressed:bg-surface-2 aria-pressed:text-text">
+          <span class="w-2.5 h-0.5 rounded" style={`background:${t.color}`}></span>{t.label}
+        </button>
+        <a href={`/indicadores/${t.guide}`} class="px-1.5 py-1 border-l border-border text-muted hover:text-accent" title={`O que é ${t.label}?`} aria-label={`O que é ${t.label}?`}>?</a>
+      </span>
+    ))}
+  </div>
+
+  <div class="h-[440px] relative transition-[height]" data-chart-el>
+    <p class="absolute inset-0 grid place-items-center text-sm text-muted z-10" data-chart-msg>Carregando gráfico…</p>
   </div>
 </div>
 
 <script>
   import { CandlestickSeries, ColorType, HistogramSeries, createChart, type UTCTimestamp } from 'lightweight-charts';
+  import { DEFAULT_INDICATORS, INDICATOR_TOGGLES, drawIndicators, type Candle, type IndicatorId } from '../lib/chart-indicators';
 
-  const LIMITS: Record<string, number> = { '1h': 168, '4h': 180, '1d': 365, '1w': 260 };
+  const LIMITS: Record<string, number> = { '1h': 500, '4h': 500, '1d': 500, '1w': 300 };
   const BRT_OFFSET = -3 * 3600; // Brasil sem horário de verão desde 2019.
+  const BASE_HEIGHT = 440;
+  const OSC_HEIGHT = 130;
+  const STORE_KEY = 'easytrader:chart-indicators';
   const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+  function loadActive(): Set<IndicatorId> {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE_KEY) ?? 'null');
+      if (Array.isArray(saved)) return new Set(saved.filter((id) => INDICATOR_TOGGLES.some((t) => t.id === id)));
+    } catch {
+      // Sem localStorage: usa o padrão.
+    }
+    return new Set(DEFAULT_INDICATORS);
+  }
 
   for (const root of document.querySelectorAll<HTMLElement>('[data-crypto-chart]')) {
     const pair = root.dataset.pair!;
@@ -44,18 +72,20 @@ const INTERVALS = [
     const msg = root.querySelector<HTMLElement>('[data-chart-msg]')!;
     const up = css('--color-up');
     const down = css('--color-down');
+    const active = loadActive();
+    let candles: Candle[] = [];
 
     const chart = createChart(el, {
       autoSize: true,
-      layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: css('--color-muted'), attributionLogo: true },
+      layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: css('--color-muted'), attributionLogo: true, panes: { separatorColor: css('--color-border') } },
       grid: { vertLines: { color: css('--color-border') + '55' }, horzLines: { color: css('--color-border') + '55' } },
       rightPriceScale: { borderColor: css('--color-border') },
       timeScale: { borderColor: css('--color-border'), timeVisible: true },
       localization: { locale: 'pt-BR' },
     });
-    const candles = chart.addSeries(CandlestickSeries, { upColor: up, downColor: down, wickUpColor: up, wickDownColor: down, borderVisible: false });
-    const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' }, priceScaleId: '' });
-    volume.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+    const candleSeries = chart.addSeries(CandlestickSeries, { upColor: up, downColor: down, wickUpColor: up, wickDownColor: down, borderVisible: false });
+    const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' }, priceScaleId: '', lastValueVisible: false, priceLineVisible: false });
+    volume.priceScale().applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
 
     // Se o gráfico foi montado sem largura (aba em segundo plano, layout ainda
     // calculando), reajusta o zoom quando ele ganhar tamanho.
@@ -65,6 +95,16 @@ const INTERVALS = [
       lastWidth = el.clientWidth;
     }).observe(el);
 
+    let clearIndicators = () => {};
+
+    function redrawIndicators() {
+      clearIndicators();
+      const result = drawIndicators(chart, candles, active);
+      clearIndicators = result.clear;
+      el.style.height = `${BASE_HEIGHT + result.oscillators * OSC_HEIGHT}px`;
+      root.querySelectorAll<HTMLElement>('[data-indicator]').forEach((b) => b.setAttribute('aria-pressed', String(active.has(b.dataset.indicator as IndicatorId))));
+    }
+
     async function load(interval: string) {
       msg.hidden = false;
       msg.textContent = 'Carregando gráfico…';
@@ -73,12 +113,19 @@ const INTERVALS = [
         if (!res.ok) throw new Error(String(res.status));
         const rows: [number, string, string, string, string, string][] = await res.json();
         const intraday = interval.endsWith('h');
-        const t = (ms: number) => (ms / 1000 + (intraday ? BRT_OFFSET : 0)) as UTCTimestamp;
-        candles.setData(rows.map((r) => ({ time: t(r[0]), open: +r[1], high: +r[2], low: +r[3], close: +r[4] })));
-        volume.setData(
-          rows.map((r) => ({ time: t(r[0]), value: +r[5], color: (+r[4] >= +r[1] ? up : down) + '66' })),
-        );
-        chart.timeScale().fitContent();
+        candles = rows.map((r) => ({
+          time: (r[0] / 1000 + (intraday ? BRT_OFFSET : 0)) as UTCTimestamp,
+          open: +r[1],
+          high: +r[2],
+          low: +r[3],
+          close: +r[4],
+          volume: +r[5],
+        }));
+        candleSeries.setData(candles);
+        volume.setData(candles.map((c) => ({ time: c.time, value: c.volume, color: (c.close >= c.open ? up : down) + '55' })));
+        redrawIndicators();
+        // Mostra os últimos ~150 candles; o resto (usado no cálculo das médias longas) fica à esquerda.
+        chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, candles.length - 150), to: candles.length + 3 });
         msg.hidden = true;
       } catch {
         msg.textContent = 'Não foi possível carregar o gráfico agora.';
@@ -89,6 +136,20 @@ const INTERVALS = [
       btn.addEventListener('click', () => {
         root.querySelectorAll('[data-interval]').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
         load(btn.dataset.interval!);
+      }),
+    );
+
+    root.querySelectorAll<HTMLButtonElement>('[data-indicator]').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.indicator as IndicatorId;
+        if (active.has(id)) active.delete(id);
+        else active.add(id);
+        try {
+          localStorage.setItem(STORE_KEY, JSON.stringify([...active]));
+        } catch {
+          // Ignora: a escolha só não fica salva.
+        }
+        if (candles.length) redrawIndicators();
       }),
     );
 

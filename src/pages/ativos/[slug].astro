@@ -2,9 +2,10 @@
 import Layout from '../../layouts/Layout.astro';
 import DataStamp from '../../components/DataStamp.astro';
 import CryptoChart from '../../components/CryptoChart.astro';
+import TechnicalReading from '../../components/TechnicalReading.astro';
 import TradingViewChart from '../../components/TradingViewChart.astro';
-import { ASSETS, KIND_LABEL, type Asset } from '../../data/assets';
-import { loadData, type CryptoData, type QuotesData } from '../../lib/market';
+import { ASSETS, datasetFor, kindLabel, type Asset } from '../../data/assets';
+import { loadDatasets } from '../../lib/market';
 import { renderAssetQuote } from '../../lib/render';
 
 export function getStaticPaths() {
@@ -13,15 +14,10 @@ export function getStaticPaths() {
 
 const { asset } = Astro.props as { asset: Asset };
 
-const [us, fx, crypto] = await Promise.all([
-  loadData<QuotesData>('us'),
-  loadData<QuotesData>('fx'),
-  loadData<CryptoData>('crypto'),
-]);
-
-const dataset = asset.kind === 'crypto' ? 'crypto' : asset.kind === 'fx' ? 'fx' : 'us';
-const updatedAt = (asset.kind === 'crypto' ? crypto : asset.kind === 'fx' ? fx : us)?.updatedAt;
-const source = { crypto: 'CoinGecko', fx: 'BCE (Frankfurter)', us: 'Finnhub' }[dataset];
+const dataset = datasetFor(asset);
+const ds = await loadDatasets([dataset]);
+const updatedAt = ds[dataset]?.updatedAt;
+const source = { crypto: 'CoinGecko', fx: 'BCE (Frankfurter)', us: 'Finnhub', cboe: 'Cboe (15 min de atraso)' }[dataset];
 
 const ABOUT: Record<Asset['kind'], string> = {
   index: `${asset.symbol} é um ETF (fundo negociado em bolsa) que replica o ${asset.tracks}. O preço mostrado é o do ETF, não os pontos do índice, mas a variação percentual acompanha o índice de perto.`,
@@ -30,39 +26,49 @@ const ABOUT: Record<Asset['kind'], string> = {
   fx: `Cotação de referência do Banco Central Europeu, publicada uma vez por dia útil. O gráfico do TradingView mostra o mercado intradiário.`,
   crypto: `${asset.name} (${asset.symbol}) é negociada 24 horas por dia, 7 dias por semana. A variação mostrada é das últimas 24 horas.`,
 };
+const about = asset.about ?? ABOUT[asset.kind];
 ---
 
 <Layout title={`${asset.name} (${asset.symbol}) — cotação e gráfico`} description={`Cotação, variação e gráfico de ${asset.name} (${asset.symbol}).`}>
   <nav class="text-sm text-muted mb-4" aria-label="Breadcrumb">
     <a href="/ativos" class="hover:text-text">Ativos</a>
     <span class="mx-1">/</span>
-    <span>{KIND_LABEL[asset.kind]}</span>
+    <span>{kindLabel(asset)}</span>
   </nav>
 
   <header class="mb-6">
     <div class="flex flex-wrap items-center gap-3">
       <h1 class="text-3xl font-bold tracking-tight">{asset.name}</h1>
       <span class="text-muted font-mono">{asset.symbol}</span>
-      <span class="text-xs rounded-full border border-border px-2 py-0.5 text-muted">{KIND_LABEL[asset.kind]}</span>
+      <span class="text-xs rounded-full border border-border px-2 py-0.5 text-muted">{kindLabel(asset)}</span>
     </div>
     <div class="mt-4" data-asset-quote data-slug={asset.slug}>
-      <Fragment set:html={renderAssetQuote(asset, us, fx, crypto)} />
+      <Fragment set:html={renderAssetQuote(asset, ds)} />
     </div>
     <div class="mt-3"><DataStamp name={dataset} updatedAt={updatedAt} source={source} /></div>
   </header>
 
   {asset.binance ? <CryptoChart pair={asset.binance} /> : asset.tv && <TradingViewChart symbol={asset.tv} />}
+  {!asset.binance && (
+    <p class="text-xs text-muted mt-2">
+      Para adicionar indicadores (médias, RSI, MACD…), use o botão <strong>Indicadores</strong> do gráfico.
+      <a href="/indicadores" class="text-accent">Entenda cada um</a>.
+    </p>
+  )}
 
-  <section class="mt-6 rounded-xl border border-border bg-surface p-5 max-w-3xl">
-    <h2 class="font-semibold mb-2">Sobre</h2>
-    <p class="text-sm text-text/90 leading-relaxed">{ABOUT[asset.kind]}</p>
-    <p class="text-xs text-muted mt-3">Informação educacional. Não é recomendação de compra ou venda.</p>
-  </section>
+  <div class="grid gap-4 lg:grid-cols-2 mt-6">
+    {asset.binance && <TechnicalReading pair={asset.binance} />}
+    <section class="rounded-xl border border-border bg-surface p-5">
+      <h2 class="font-semibold mb-2">Sobre</h2>
+      <p class="text-sm text-text/90 leading-relaxed">{about}</p>
+      <p class="text-xs text-muted mt-3">Informação educacional. Não é recomendação de compra ou venda.</p>
+    </section>
+  </div>
 </Layout>
 
 <script>
-  import { assetBySlug } from '../../data/assets';
-  import { fetchLatest, type CryptoData, type QuotesData } from '../../lib/market';
+  import { assetBySlug, datasetFor } from '../../data/assets';
+  import { fetchDatasets } from '../../lib/market';
   import { renderAssetQuote } from '../../lib/render';
   import { every, REFRESH_MS, setStamp } from '../../lib/live';
 
@@ -70,11 +76,12 @@ const ABOUT: Record<Asset['kind'], string> = {
   const asset = box && assetBySlug(box.dataset.slug!);
 
   if (box && asset) {
-    const name = asset.kind === 'crypto' ? 'crypto' : asset.kind === 'fx' ? 'fx' : 'us';
+    const name = datasetFor(asset);
     every(REFRESH_MS, async () => {
-      const data = await fetchLatest<CryptoData & QuotesData>(name);
+      const ds = await fetchDatasets([name]);
+      const data = ds[name];
       if (!data) return;
-      const html = renderAssetQuote(asset, name === 'us' ? data : null, name === 'fx' ? data : null, name === 'crypto' ? data : null);
+      const html = renderAssetQuote(asset, ds);
       if (html) box.innerHTML = html;
       setStamp(name, data.updatedAt);
     });

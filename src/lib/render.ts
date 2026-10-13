@@ -1,8 +1,8 @@
 // Renderizadores em string usados no build (set:html) e no navegador ao
 // atualizar os dados, para manter um único markup por bloco.
-import { ASSETS, assetByCoingecko, type Asset } from '../data/assets';
+import { ASSETS, assetByCoingecko, datasetFor, type Asset } from '../data/assets';
 import { formatDateTimeBR, formatPct, formatPrice, formatRelative, formatUsdCompact, trendClass } from './format';
-import type { Coin, CryptoData, NewsCategory, NewsItem, QuotesData, SentimentData, TickerItem } from './market';
+import type { Coin, CryptoData, Datasets, NewsCategory, NewsItem, SentimentData, TickerItem } from './market';
 
 export const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -146,13 +146,20 @@ export interface AssetRow {
   changePct: number | null;
 }
 
-export function collectRows(us: QuotesData | null, fx: QuotesData | null, crypto: CryptoData | null): AssetRow[] {
+const findCoin = (asset: Asset, ds: Datasets) => ds.crypto?.coins.find((x) => x.id === asset.coingecko);
+
+function findQuote(asset: Asset, ds: Datasets) {
+  const name = datasetFor(asset);
+  return name === 'crypto' ? undefined : ds[name]?.quotes.find((x) => x.symbol === asset.symbol);
+}
+
+export function collectRows(ds: Datasets): AssetRow[] {
   return ASSETS.map((asset) => {
     if (asset.kind === 'crypto') {
-      const c = crypto?.coins.find((x) => x.id === asset.coingecko);
+      const c = findCoin(asset, ds);
       return { asset, price: c?.price ?? null, changePct: c?.change24h ?? null };
     }
-    const q = (asset.kind === 'fx' ? fx : us)?.quotes.find((x) => x.symbol === asset.symbol);
+    const q = findQuote(asset, ds);
     return { asset, price: q?.price ?? null, changePct: q?.changePct ?? null };
   });
 }
@@ -174,9 +181,9 @@ export function renderAssetRows(rows: AssetRow[]): string {
 const stat = (label: string, value: string) =>
   `<div><dt class="text-xs text-muted">${label}</dt><dd class="font-mono tabular-nums">${value}</dd></div>`;
 
-export function renderAssetQuote(asset: Asset, us: QuotesData | null, fx: QuotesData | null, crypto: CryptoData | null): string {
+export function renderAssetQuote(asset: Asset, ds: Datasets): string {
   if (asset.kind === 'crypto') {
-    const c = crypto?.coins.find((x) => x.id === asset.coingecko);
+    const c = findCoin(asset, ds);
     if (!c) return '';
     return `<div class="flex flex-wrap items-baseline gap-3">
   <span class="text-3xl font-bold font-mono tabular-nums">US$ ${formatPrice(c.price, 'crypto')}</span>
@@ -193,9 +200,10 @@ export function renderAssetQuote(asset: Asset, us: QuotesData | null, fx: Quotes
   ${stat('Distância da máxima', formatPct(c.athChangePct))}
 </dl>`;
   }
-  const q = (asset.kind === 'fx' ? fx : us)?.quotes.find((x) => x.symbol === asset.symbol);
+  const q = findQuote(asset, ds);
   if (!q) return '';
-  const prefix = asset.kind === 'fx' ? '' : 'US$ ';
+  // Câmbio e índices calculados (VIX) não são preços em dólar.
+  const prefix = asset.kind === 'fx' || asset.cboe ? '' : 'US$ ';
   const stats =
     asset.kind === 'fx'
       ? [stat('Fechamento anterior', formatPrice(q.prevClose, 'fx')), stat('Data de referência', q.asOf.split('-').reverse().join('/'))]

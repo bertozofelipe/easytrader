@@ -45,11 +45,14 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Home com destaques do dia: últimas notícias (metade em português), mercado agora, medo e ganância, atalho para a agenda
 - ⬜ Opcional: fonte de forex em português
 
-## Etapa 4 — Indicadores técnicos ⬜ (~2 semanas)
+## Etapa 4 — Indicadores técnicos ✅ (13/10/2026)
 
-- ⬜ Indicadores no gráfico do ativo (SMA/EMA, RSI, MACD, Bollinger, ATR)
-- ⬜ Resumo técnico por ativo
-- ⬜ Biblioteca `/indicadores` com uma página por indicador
+- ✅ Biblioteca própria de indicadores (`src/lib/indicators.ts`): SMA, EMA, Bollinger, RSI (Wilder) e MACD, conferidos com valores de referência
+- ✅ Gráfico cripto com MM 20/50/200, Bollinger, RSI e MACD (painéis próprios), liga/desliga lembrado no navegador
+- ✅ "Leitura dos indicadores" no diário para cada cripto (viés de alta/baixa/neutro, sem recomendação)
+- ✅ Ações, ETFs e câmbio: indicadores pelo botão do gráfico do TradingView
+- ✅ `/indicadores` com 8 guias: médias móveis, RSI, MACD, Bollinger, estocástico, ATR, volume, suporte e resistência
+- ✅ VIX (Cboe, pontos do índice, 15 min de atraso) em "Índices e commodities"
 
 ## Etapa 5 — Escola v1 e ferramentas ⬜ (~3 semanas, conteúdo pode andar em paralelo)
 

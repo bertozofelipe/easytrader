@@ -1,6 +1,6 @@
 // Dados de mercado publicados pelo GitHub Actions no branch `data`.
 // raw.githubusercontent.com libera CORS e faz cache de 5 min.
-import type { AssetKind } from '../data/assets';
+import type { AssetKind, DatasetName } from '../data/assets';
 
 export type { AssetKind };
 
@@ -129,4 +129,21 @@ export interface NewsItem {
 export interface NewsData extends Dataset {
   failed: string[];
   items: NewsItem[];
+}
+
+/** Arquivos de dados de cotação, por nome (ver datasetFor). */
+export type Datasets = { crypto?: CryptoData | null } & Partial<Record<Exclude<DatasetName, 'crypto'>, QuotesData | null>>;
+
+const QUOTE_DATASETS: DatasetName[] = ['us', 'fx', 'crypto', 'cboe'];
+
+/** Build: carrega os arquivos de cotação pedidos (padrão: todos). */
+export async function loadDatasets(names: DatasetName[] = QUOTE_DATASETS): Promise<Datasets> {
+  const values = await Promise.all(names.map((n) => loadData(n)));
+  return Object.fromEntries(names.map((n, i) => [n, values[i]])) as Datasets;
+}
+
+/** Navegador: busca as versões mais recentes dos arquivos de cotação pedidos. */
+export async function fetchDatasets(names: DatasetName[] = QUOTE_DATASETS): Promise<Datasets> {
+  const values = await Promise.all(names.map((n) => fetchLatest(n)));
+  return Object.fromEntries(names.map((n, i) => [n, values[i]])) as Datasets;
 }

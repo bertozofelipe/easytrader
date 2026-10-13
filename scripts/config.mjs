@@ -1,6 +1,6 @@
 // Configuração dos coletores. A lista de ativos vem de src/data/assets.ts
 // (fonte única, compartilhada com o site).
-import { ASSETS } from '../src/data/assets.ts';
+import { ASSETS, datasetFor } from '../src/data/assets.ts';
 
 export const REPO = 'bertozofelipe/easytrader';
 export const DATA_BRANCH = 'data';
@@ -12,7 +12,7 @@ export const CRYPTO_TOP_N = 50;
 export const TICKER_CRYPTO = ASSETS.filter((a) => a.kind === 'crypto' && a.ticker).map((a) => a.coingecko);
 
 // Ações e ETFs dos EUA (Finnhub).
-export const US_SYMBOLS = ASSETS.filter((a) => ['index', 'commodity', 'stock'].includes(a.kind)).map((a) => ({
+export const US_SYMBOLS = ASSETS.filter((a) => datasetFor(a) === 'us').map((a) => ({
   symbol: a.symbol,
   name: a.name,
   kind: a.kind,
@@ -26,3 +26,6 @@ export const FX_PAIRS = ASSETS.filter((a) => a.kind === 'fx').map((a) => ({
   invert: a.fx.invert,
   ticker: Boolean(a.ticker),
 }));
+
+// Índices calculados pela Cboe (VIX).
+export const CBOE_ASSETS = ASSETS.filter((a) => datasetFor(a) === 'cboe');
