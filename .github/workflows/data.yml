@@ -5,6 +5,11 @@ on:
     # A cada 15 minutos (o GitHub pode atrasar execuções agendadas em alguns minutos).
     - cron: '*/15 * * * *'
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Conjuntos a recalcular mesmo dentro do prazo (ex.: signals)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -31,6 +36,7 @@ jobs:
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
           # Opcional: termômetro intradiário de ações, ETFs e câmbio (plano gratuito da Twelve Data).
           TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+          FORCE: ${{ inputs.force }}
 
       # Publica os JSON num branch órfão `data` com um único commit (sobrescrito a cada execução),
       # para não inflar o histórico nem disparar rebuild do site.

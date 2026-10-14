@@ -37,10 +37,12 @@ const DATASETS = {
 // Conjuntos baseados em candles diários: recalcula só quando a versão
 // publicada passou dessa idade (poupa as APIs; o resultado muda pouco no dia).
 const MAX_AGE_HOURS = { signals: 4 };
+// FORCE=signals,... recalcula esses conjuntos mesmo dentro do prazo (disparo manual do workflow).
+const FORCE = new Set((process.env.FORCE ?? '').split(',').map((s) => s.trim()).filter(Boolean));
 
 async function collect(name, fn) {
   const started = Date.now();
-  if (MAX_AGE_HOURS[name]) {
+  if (MAX_AGE_HOURS[name] && !FORCE.has(name)) {
     const previous = await getJson(`${PREVIOUS_DATA_URL}/${name}.json`, { retries: 1 }).catch(() => null);
     const ageH = previous && (Date.now() - new Date(previous.updatedAt).getTime()) / 3_600_000;
     if (previous && !previous.stale && ageH < MAX_AGE_HOURS[name]) {

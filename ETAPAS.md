@@ -75,7 +75,9 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ `/ativos`: etiqueta do viés em cada ativo
 - ✅ Timeframes 15 min, 1H, 4H e diário no termômetro (seletor lembrado no navegador); intradiário em `signals-intraday.json`, recalculado a cada coleta
 - ✅ Cripto intradiário pela Binance; ações, ETFs e câmbio pela Twelve Data (barras de 15 min agrupadas em 1H/4H, conferidas com as barras nativas); VIX só diário
-- 👤 Criar conta gratuita na Twelve Data e cadastrar o secret `TWELVEDATA_API_KEY` no GitHub (sem ele, ações/ETFs/câmbio mostram só o diário). Uso estimado: ~570 de 800 consultas/dia
+- ✅ Twelve Data ativa (secret `TWELVEDATA_API_KEY`): 29 ativos com 15 min, 1H e 4H desde 14/10/2026; uso estimado ~570 de 800 consultas/dia
+- ✅ Diário de ações, ETFs e VIX inclui o pregão do dia assim que ele termina (barras de 1 min da Cboe), sem esperar o histórico oficial da manhã seguinte
+- ✅ Workflow de dados aceita `force` no disparo manual (ex.: `signals`) para recalcular fora do prazo
 
 ## Idiomas (português e inglês) 🔄 (primeira leva em 14/10/2026)
 

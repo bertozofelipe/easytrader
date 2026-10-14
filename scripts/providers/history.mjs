@@ -13,10 +13,39 @@ async function binanceCandles(pair) {
     .map((r) => ({ t: new Date(r[0]).toISOString().slice(0, 10), h: +r[2], l: +r[3], c: +r[4] }));
 }
 
-/** Ações, ETFs e índices da Cboe: histórico diário público (atrasado). */
+/**
+ * Ações, ETFs e índices da Cboe: histórico diário público (atrasado). O
+ * histórico só recebe o pregão do dia na manhã seguinte; se ele estiver
+ * faltando e o pregão já terminou, monta esse candle com as barras de 1 min.
+ */
 async function cboeCandles(symbol) {
   const { data } = await getJson(`https://cdn-api.cboe.com/api/global/delayed_quotes/charts/historical/${symbol}.json`);
-  return data.slice(-CANDLES).map((r) => ({ t: r.date, h: +r.high, l: +r.low, c: +r.close }));
+  const candles = data.map((r) => ({ t: r.date, h: +r.high, l: +r.low, c: +r.close }));
+  try {
+    const last = await cboeLastSession(symbol);
+    if (last && last.t > candles[candles.length - 1].t) candles.push(last);
+  } catch (err) {
+    console.warn(`  signals ${symbol}: pregão do dia indisponível (${err.message})`);
+  }
+  return candles.slice(-CANDLES);
+}
+
+/** Candle diário do último pregão, se já encerrado, a partir das barras de 1 min da Cboe. */
+async function cboeLastSession(symbol) {
+  await sleep(300);
+  const { data } = await getJson(`https://cdn-api.cboe.com/api/global/delayed_quotes/charts/intraday/${symbol}.json`, { retries: 1 });
+  // Índices como o VIX trazem barras zeradas antes do primeiro negócio.
+  const bars = (data ?? []).filter((b) => b.price && b.price.close > 0 && b.price.low > 0);
+  if (!bars.length) return null;
+  // Horário de Nova York, sem fuso: "AAAA-MM-DDTHH:MM:SS". Pregão encerrado = última barra às 15h59 ou depois.
+  const lastTime = bars[bars.length - 1].datetime;
+  if (lastTime.slice(11, 16) < '15:59') return null;
+  return {
+    t: lastTime.slice(0, 10),
+    h: Math.max(...bars.map((b) => b.price.high)),
+    l: Math.min(...bars.map((b) => b.price.low)),
+    c: bars[bars.length - 1].price.close,
+  };
 }
 
 /** Câmbio: referência diária do BCE, só fechamento (máxima = mínima = fechamento). */
