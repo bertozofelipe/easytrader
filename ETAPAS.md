@@ -68,7 +68,7 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 ## Termômetro técnico ✅ (14/10/2026)
 
 - ✅ Histórico diário: Binance (cripto), Cboe (ações, ETFs e VIX, sem chave), BCE/Frankfurter (câmbio, só fechamentos)
-- ✅ `signals.json` no branch `data`, recalculado a cada 4 h pelo coletor (19 indicadores × 29 ativos, ~40 KB)
+- ✅ `signals.json` no branch `data`, recalculado a cada 4 h pelo coletor (19 indicadores × 30 ativos, ~40 KB)
 - ✅ Indicadores novos conferidos com a biblioteca `technicalindicators`: estocástico, CCI, ADX (+DI/−DI), momento
 - ✅ Faixas: forte alta · alta · neutro · baixa · forte baixa (viés, sem "compra/venda": conteúdo educacional e regra da CVM para recomendações)
 - ✅ Página do ativo: mostrador do resumo + médias móveis e osciladores, tabela dos 19 indicadores e "Como é calculado" (substitui a "Leitura dos indicadores" só de cripto)
