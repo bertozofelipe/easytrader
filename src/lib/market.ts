@@ -1,6 +1,7 @@
 // Dados de mercado publicados pelo GitHub Actions no branch `data`.
 // raw.githubusercontent.com libera CORS e faz cache de 5 min.
 import type { AssetKind, DatasetName } from '../data/assets';
+import type { Gauge } from './gauge';
 
 export type { AssetKind };
 
@@ -114,6 +115,13 @@ export async function fetchLatest<T>(name: string): Promise<T | null> {
 }
 
 export const isStale = (iso: string) => Date.now() - new Date(iso).getTime() > STALE_AFTER_MS;
+
+/** Termômetro técnico por ativo (slug), no gráfico diário. */
+export interface SignalsData extends Dataset {
+  timeframe: '1d';
+  failed: string[];
+  assets: Record<string, Gauge>;
+}
 
 export type NewsCategory = 'mercados' | 'brasil' | 'forex' | 'cripto';
 

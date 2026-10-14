@@ -1,0 +1,90 @@
+---
+// Termômetro técnico do ativo: resumo de médias móveis e osciladores no
+// gráfico diário (calculado pelo coletor em signals.json). Educacional: mostra o
+// viés dos indicadores, sem recomendação de compra ou venda.
+import type { Asset } from '../data/assets';
+import { MA_PERIODS } from '../lib/gauge';
+import { renderGauge } from '../lib/gauge-view';
+import { loadData, type SignalsData } from '../lib/market';
+
+interface Props {
+  asset: Asset;
+}
+
+const { asset } = Astro.props;
+const signals = await loadData<SignalsData>('signals');
+const gauge = signals?.assets[asset.slug];
+const periods = MA_PERIODS.join(', ');
+---
+
+<section class="rounded-xl border border-border bg-surface p-5" aria-labelledby="termometro" data-gauge data-slug={asset.slug} data-kind={asset.kind} data-key={gauge ? `${gauge.asOf}|${gauge.score}` : undefined}>
+  <div class="flex flex-wrap items-baseline justify-between gap-2">
+    <h2 id="termometro" class="text-xl font-semibold">
+      Termômetro técnico <span class="ml-1 align-middle text-xs font-normal rounded-full border border-border px-2 py-0.5 text-muted">Diário</span>
+    </h2>
+    <a href="#metodologia" class="text-sm text-accent" data-gauge-method-link>Como é calculado</a>
+  </div>
+  <p class="text-xs text-muted mt-1">
+    Resume o que as médias móveis e os osciladores estão mostrando. Indica o viés dos indicadores, não é recomendação de compra ou venda.
+  </p>
+
+  <div class="mt-5" data-gauge-body>
+    {gauge ? <Fragment set:html={renderGauge(gauge, asset.kind)} /> : <p class="text-sm text-muted">Calculando…</p>}
+  </div>
+
+  <details id="metodologia" class="mt-3 scroll-mt-20" data-gauge-method>
+    <summary class="cursor-pointer text-sm text-accent select-none">Como é calculado</summary>
+    <div class="text-sm text-text/90 leading-relaxed mt-2 space-y-2 max-w-3xl">
+      <p>
+        <strong>Médias móveis (12):</strong> simples e exponenciais de {periods} dias. Cada uma vota <em>alta</em> se o
+        fechamento está acima dela e <em>baixa</em> se está abaixo.
+      </p>
+      <p>
+        <strong>Osciladores (7):</strong> RSI, estocástico, CCI, ADX, momento, MACD e %B de Bollinger. Cada um vota alta,
+        neutro ou baixa pela regra mostrada na tabela.
+      </p>
+      <p>
+        Cada grupo vira uma nota de −1 (todos em baixa) a +1 (todos em alta); o resumo é a média dos dois grupos, com peso igual.
+        Faixas: <span class="text-up">forte alta</span> a partir de +0,5 · <span class="text-up">alta</span> acima de +0,1 ·
+        <span class="text-muted">neutro</span> entre −0,1 e +0,1 · <span class="text-down">baixa</span> abaixo de −0,1 ·
+        <span class="text-down">forte baixa</span> até −0,5.
+      </p>
+      <p class="text-muted text-xs">
+        Usa candles diários já fechados (cripto: Binance, 0h UTC; ações, ETFs e VIX: Cboe; câmbio: BCE) e é recalculado a cada
+        poucas horas. Indicadores olham o passado: não preveem o preço e podem divergir entre si. Veja o
+        <a href="/aviso-de-risco" class="text-accent">aviso de risco</a>.
+      </p>
+    </div>
+  </details>
+</section>
+
+<script>
+  import { fetchLatest, type SignalsData } from '../lib/market';
+  import { renderGauge } from '../lib/gauge-view';
+  import type { AssetKind } from '../data/assets';
+  import { every, REFRESH_MS } from '../lib/live';
+
+  const root = document.querySelector<HTMLElement>('[data-gauge]');
+
+  if (root) {
+    const body = root.querySelector<HTMLElement>('[data-gauge-body]')!;
+    const method = root.querySelector<HTMLDetailsElement>('[data-gauge-method]')!;
+    root.querySelector('[data-gauge-method-link]')!.addEventListener('click', () => (method.open = true));
+    if (location.hash === '#metodologia') method.open = true;
+
+    let shown = root.dataset.key ?? null;
+    every(REFRESH_MS, async () => {
+      const data = await fetchLatest<SignalsData>('signals');
+      const g = data?.assets[root.dataset.slug!];
+      if (!g) {
+        if (!shown) body.innerHTML = '<p class="text-sm text-muted">Termômetro indisponível agora. Tente de novo mais tarde.</p>';
+        return;
+      }
+      // Só redesenha quando muda, para não fechar a tabela aberta.
+      const key = `${g.asOf}|${g.score}`;
+      if (key === shown) return;
+      shown = key;
+      body.innerHTML = renderGauge(g, root.dataset.kind as AssetKind);
+    });
+  }
+</script>

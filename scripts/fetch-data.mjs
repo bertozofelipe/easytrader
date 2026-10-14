@@ -7,6 +7,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { ASSETS } from '../src/data/assets.ts';
 import { CBOE_ASSETS, CRYPTO_TOP_N, FX_CURRENCIES, FX_PAIRS, PREVIOUS_DATA_URL, TICKER_CRYPTO, US_SYMBOLS } from './config.mjs';
 import { getJson } from './lib/http.mjs';
 import { fetchCrypto } from './providers/coingecko.mjs';
@@ -15,6 +16,7 @@ import { fetchFx } from './providers/frankfurter.mjs';
 import { fetchUsQuotes } from './providers/finnhub.mjs';
 import { fetchNews } from './providers/rss.mjs';
 import { fetchCboeIndices } from './providers/cboe.mjs';
+import { fetchSignals } from './providers/history.mjs';
 import { FEEDS, NEWS_MAX_AGE_HOURS, NEWS_MAX_TOTAL, NEWS_PER_FEED } from './feeds.mjs';
 
 const outFlag = process.argv.indexOf('--out');
@@ -27,10 +29,23 @@ const DATASETS = {
   us: () => fetchUsQuotes(US_SYMBOLS),
   cboe: () => fetchCboeIndices(CBOE_ASSETS),
   news: () => fetchNews(FEEDS, { maxAgeHours: NEWS_MAX_AGE_HOURS, perFeed: NEWS_PER_FEED, maxTotal: NEWS_MAX_TOTAL }),
+  signals: () => fetchSignals(ASSETS),
 };
+
+// Conjuntos baseados em candles diários: recalcula só quando a versão
+// publicada passou dessa idade (poupa as APIs; o resultado muda pouco no dia).
+const MAX_AGE_HOURS = { signals: 4 };
 
 async function collect(name, fn) {
   const started = Date.now();
+  if (MAX_AGE_HOURS[name]) {
+    const previous = await getJson(`${PREVIOUS_DATA_URL}/${name}.json`, { retries: 1 }).catch(() => null);
+    const ageH = previous && (Date.now() - new Date(previous.updatedAt).getTime()) / 3_600_000;
+    if (previous && !previous.stale && ageH < MAX_AGE_HOURS[name]) {
+      console.log(`↺ ${name}: versão publicada tem ${ageH.toFixed(1)} h, reaproveitada`);
+      return { name, ok: true, payload: previous };
+    }
+  }
   try {
     const data = await fn();
     console.log(`✔ ${name} (${Date.now() - started} ms)`);

@@ -65,6 +65,22 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Calculadora de pip: 14 pares (principais, cruzados, USD/BRL e USD/MXN), valor por lote padrão/mini/micro na moeda da conta e valor de um movimento em pips
 - ✅ `fx.json` passou a trazer `rates` (1 USD = x moeda) para as 11 moedas, usado pelas duas ferramentas
 
+## Termômetro técnico ✅ (14/10/2026)
+
+- ✅ Histórico diário: Binance (cripto), Cboe (ações, ETFs e VIX, sem chave), BCE/Frankfurter (câmbio, só fechamentos)
+- ✅ `signals.json` no branch `data`, recalculado a cada 4 h pelo coletor (19 indicadores × 29 ativos, ~40 KB)
+- ✅ Indicadores novos conferidos com a biblioteca `technicalindicators`: estocástico, CCI, ADX (+DI/−DI), momento
+- ✅ Faixas: forte alta · alta · neutro · baixa · forte baixa (viés, sem "compra/venda": conteúdo educacional e regra da CVM para recomendações)
+- ✅ Página do ativo: mostrador do resumo + médias móveis e osciladores, tabela dos 19 indicadores e "Como é calculado" (substitui a "Leitura dos indicadores" só de cripto)
+- ✅ `/ativos`: etiqueta do viés em cada ativo
+
+## Idiomas (português e inglês) ⬜
+
+- ⬜ i18n do Astro: português na raiz, inglês em `/en/`; seletor PT | EN; `hreflang` e sitemap por idioma
+- ⬜ Textos da interface em dicionários; números e datas no formato de cada idioma
+- ⬜ Primeira leva em inglês: interface, ativos, cripto, notícias, calendário, ferramentas, termômetro e páginas legais
+- ⬜ Depois: guias de indicadores, guia de eventos e glossário
+
 ## Etapa 6 — Lançamento ⬜ (~1 semana)
 
 - ⬜ Analytics sem cookies (Cloudflare Web Analytics)

@@ -2,7 +2,8 @@
 // atualizar os dados, para manter um único markup por bloco.
 import { ASSETS, assetByCoingecko, datasetFor, type Asset } from '../data/assets';
 import { formatDateTimeBR, formatPct, formatPrice, formatRelative, formatUsdCompact, trendClass } from './format';
-import type { Coin, CryptoData, Datasets, NewsCategory, NewsItem, SentimentData, TickerItem } from './market';
+import { ratingPill } from './gauge-view';
+import type { Coin, CryptoData, Datasets, NewsCategory, NewsItem, SentimentData, SignalsData, TickerItem } from './market';
 
 export const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -174,7 +175,8 @@ export const watchButton = (a: Asset, { label = false } = {}) =>
   }
 </button>`;
 
-export function renderAssetRows(rows: AssetRow[], { watch = false } = {}): string {
+/** Linhas da lista de ativos; com `signals`, inclui a coluna do termômetro técnico. */
+export function renderAssetRows(rows: AssetRow[], { watch = false, signals }: { watch?: boolean; signals?: SignalsData | null } = {}): string {
   return rows
     .map(
       ({ asset: a, price, changePct }) => `<tr class="border-t border-border hover:bg-surface-2/50">
@@ -182,6 +184,7 @@ export function renderAssetRows(rows: AssetRow[], { watch = false } = {}): strin
   <td class="py-2 pr-4"><a href="/ativos/${a.slug}" class="hover:text-accent"><span class="font-medium">${escape(a.name)}</span> <span class="text-muted text-xs">${escape(a.symbol)}</span></a></td>
   <td class="py-2 px-2 text-right font-mono tabular-nums">${formatPrice(price, a.kind)}</td>
   <td class="py-2 pl-2 text-right">${pctSpan(changePct)}</td>
+  ${signals !== undefined ? `<td class="py-2 pl-3 text-right hidden sm:table-cell">${signals?.assets[a.slug] ? ratingPill(signals.assets[a.slug].rating) : ''}</td>` : ''}
 </tr>`,
     )
     .join('');

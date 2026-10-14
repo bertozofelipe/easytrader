@@ -86,89 +86,101 @@ export function macd(values: number[], fast = 12, slow = 26, signalPeriod = 9) {
   return { line, signal, histogram };
 }
 
-// ---------- Leitura dos indicadores (educacional) ----------
-
-export type Bias = 'alta' | 'baixa' | 'neutro';
-
-export interface Reading {
-  id: string;
-  label: string;
-  value: string;
-  bias: Bias;
-  explanation: string;
-}
-
-const last = (s: Series) => s[s.length - 1];
-const fmt = (n: number, d = 2) => n.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
-
-/**
- * Lê os indicadores no último candle diário. Descreve o que cada indicador
- * mostra; não é sinal de compra ou venda.
- */
-export function readIndicators(closes: number[]): Reading[] {
-  const price = closes[closes.length - 1];
-  const out: Reading[] = [];
-
-  for (const period of [20, 50, 200]) {
-    const m = last(sma(closes, period));
-    if (m == null) continue;
-    const diff = ((price - m) / m) * 100;
-    out.push({
-      id: `sma${period}`,
-      label: `Média móvel ${period} dias`,
-      value: fmt(m),
-      bias: Math.abs(diff) < 0.5 ? 'neutro' : diff > 0 ? 'alta' : 'baixa',
-      explanation: `Preço ${fmt(Math.abs(diff))}% ${diff >= 0 ? 'acima' : 'abaixo'} da média de ${period} dias.`,
-    });
+/** Média simples de uma série com nulls: só a partir de `period` valores seguidos. */
+function smaSeries(values: Series, period: number): Series {
+  const out: Series = new Array(values.length).fill(null);
+  let run = 0;
+  let sum = 0;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (v == null) {
+      run = 0;
+      sum = 0;
+      continue;
+    }
+    run++;
+    sum += v;
+    if (run > period) sum -= values[i - period]!;
+    if (run >= period) out[i] = sum / period;
   }
-
-  const r = last(rsi(closes, 14));
-  if (r != null) {
-    out.push({
-      id: 'rsi',
-      label: 'RSI (14)',
-      value: fmt(r, 1),
-      bias: r >= 55 ? 'alta' : r <= 45 ? 'baixa' : 'neutro',
-      explanation:
-        r >= 70
-          ? 'Acima de 70: zona de sobrecompra, movimento de alta esticado.'
-          : r <= 30
-            ? 'Abaixo de 30: zona de sobrevenda, movimento de baixa esticado.'
-            : `Entre 30 e 70: sem extremo; ${r >= 50 ? 'força compradora predominante' : 'força vendedora predominante'}.`,
-    });
-  }
-
-  const m = macd(closes);
-  const line = last(m.line);
-  const signal = last(m.signal);
-  if (line != null && signal != null) {
-    out.push({
-      id: 'macd',
-      label: 'MACD (12, 26, 9)',
-      value: fmt(line),
-      bias: line > signal ? 'alta' : line < signal ? 'baixa' : 'neutro',
-      explanation: `Linha MACD ${line > signal ? 'acima' : 'abaixo'} da linha de sinal${line > 0 ? ' e acima de zero' : ' e abaixo de zero'}.`,
-    });
-  }
-
-  const b = bollinger(closes);
-  const up = last(b.upper);
-  const low = last(b.lower);
-  if (up != null && low != null) {
-    const pos = (price - low) / (up - low);
-    out.push({
-      id: 'bollinger',
-      label: 'Bandas de Bollinger (20, 2)',
-      value: `${fmt(pos * 100, 0)}%`,
-      bias: pos > 0.8 ? 'alta' : pos < 0.2 ? 'baixa' : 'neutro',
-      explanation:
-        pos > 1
-          ? 'Preço acima da banda superior: movimento forte e esticado.'
-          : pos < 0
-            ? 'Preço abaixo da banda inferior: movimento forte e esticado.'
-            : `Preço a ${fmt(pos * 100, 0)}% do caminho entre a banda inferior e a superior.`,
-    });
-  }
-
   return out;
 }
+
+/** Estocástico lento: %K suavizado e %D. */
+export function stochastic(highs: number[], lows: number[], closes: number[], period = 14, smoothK = 3, smoothD = 3) {
+  const raw: Series = closes.map((c, i) => {
+    if (i < period - 1) return null;
+    let hh = -Infinity;
+    let ll = Infinity;
+    for (let j = i - period + 1; j <= i; j++) {
+      hh = Math.max(hh, highs[j]);
+      ll = Math.min(ll, lows[j]);
+    }
+    return hh === ll ? 50 : ((c - ll) / (hh - ll)) * 100;
+  });
+  const k = smaSeries(raw, smoothK);
+  return { k, d: smaSeries(k, smoothD) };
+}
+
+/** Commodity Channel Index. */
+export function cci(highs: number[], lows: number[], closes: number[], period = 20): Series {
+  const tp = closes.map((c, i) => (highs[i] + lows[i] + c) / 3);
+  const mean = sma(tp, period);
+  return tp.map((v, i) => {
+    const m = mean[i];
+    if (m == null) return null;
+    let dev = 0;
+    for (let j = i - period + 1; j <= i; j++) dev += Math.abs(tp[j] - m);
+    dev /= period;
+    return dev === 0 ? 0 : (v - m) / (0.015 * dev);
+  });
+}
+
+/** ADX com +DI e −DI (suavização de Wilder). */
+export function adx(highs: number[], lows: number[], closes: number[], period = 14) {
+  const n = closes.length;
+  const adxOut: Series = new Array(n).fill(null);
+  const plusDi: Series = new Array(n).fill(null);
+  const minusDi: Series = new Array(n).fill(null);
+  let tr = 0;
+  let pdm = 0;
+  let mdm = 0;
+  let dxSum = 0;
+  let prevAdx: number | null = null;
+
+  for (let i = 1; i < n; i++) {
+    const up = highs[i] - highs[i - 1];
+    const down = lows[i - 1] - lows[i];
+    const curTr = Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i - 1]), Math.abs(lows[i] - closes[i - 1]));
+    const curP = up > down && up > 0 ? up : 0;
+    const curM = down > up && down > 0 ? down : 0;
+
+    if (i <= period) {
+      tr += curTr;
+      pdm += curP;
+      mdm += curM;
+      if (i < period) continue;
+    } else {
+      tr = tr - tr / period + curTr;
+      pdm = pdm - pdm / period + curP;
+      mdm = mdm - mdm / period + curM;
+    }
+
+    const p = tr === 0 ? 0 : (100 * pdm) / tr;
+    const m = tr === 0 ? 0 : (100 * mdm) / tr;
+    plusDi[i] = p;
+    minusDi[i] = m;
+    const dx = p + m === 0 ? 0 : (100 * Math.abs(p - m)) / (p + m);
+
+    // O primeiro ADX é a média dos primeiros `period` DX.
+    const count = i - period + 1;
+    if (count < period) dxSum += dx;
+    else if (count === period) prevAdx = (dxSum + dx) / period;
+    else prevAdx = (prevAdx! * (period - 1) + dx) / period;
+    if (prevAdx != null) adxOut[i] = prevAdx;
+  }
+  return { adx: adxOut, plusDi, minusDi };
+}
+
+/** Momento: fechamento atual menos o de `period` candles atrás. */
+export const momentum = (closes: number[], period = 10): Series => closes.map((c, i) => (i >= period ? c - closes[i - period] : null));

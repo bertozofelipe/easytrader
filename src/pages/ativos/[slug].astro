@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import DataStamp from '../../components/DataStamp.astro';
 import CryptoChart from '../../components/CryptoChart.astro';
-import TechnicalReading from '../../components/TechnicalReading.astro';
+import TechnicalGauge from '../../components/TechnicalGauge.astro';
 import TradingViewChart from '../../components/TradingViewChart.astro';
 import { ASSETS, datasetFor, kindLabel, type Asset } from '../../data/assets';
 import { loadDatasets } from '../../lib/market';
@@ -57,8 +57,9 @@ const about = asset.about ?? ABOUT[asset.kind];
     </p>
   )}
 
-  <div class="grid gap-4 lg:grid-cols-2 mt-6">
-    {asset.binance && <TechnicalReading pair={asset.binance} />}
+  <div class="mt-6"><TechnicalGauge asset={asset} /></div>
+
+  <div class="mt-6">
     <section class="rounded-xl border border-border bg-surface p-5">
       <h2 class="font-semibold mb-2">Sobre</h2>
       <p class="text-sm text-text/90 leading-relaxed">{about}</p>
