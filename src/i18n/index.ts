@@ -20,9 +20,9 @@ export const ROUTES = {
   risk: { pt: '/aviso-de-risco', en: '/en/risk-disclaimer' },
   terms: { pt: '/termos', en: '/en/terms' },
   privacy: { pt: '/privacidade', en: '/en/privacy' },
-  indicators: { pt: '/indicadores' },
+  indicators: { pt: '/indicadores', en: '/en/indicators' },
+  glossary: { pt: '/glossario', en: '/en/glossary' },
   school: { pt: '/escola' },
-  glossary: { pt: '/glossario' },
 } satisfies Record<string, { pt: string; en?: string }>;
 
 export type RouteKey = keyof typeof ROUTES;
@@ -37,8 +37,21 @@ export const hasRoute = (key: RouteKey, lang: Lang) => lang === 'pt' || 'en' in 
 
 export const assetPath = (slug: string, lang: Lang) => `${route('assets', lang)}/${slug}`;
 
-/** Guia de indicador (só em português por enquanto). */
-export const guidePath = (slug: string) => `${ROUTES.indicators.pt}/${slug}`;
+/** Slug em inglês de cada guia de indicador (a chave é o slug em português). */
+export const GUIDE_SLUG_EN: Record<string, string> = {
+  'medias-moveis': 'moving-averages',
+  rsi: 'rsi',
+  macd: 'macd',
+  'bandas-de-bollinger': 'bollinger-bands',
+  estocastico: 'stochastic',
+  atr: 'atr',
+  volume: 'volume',
+  'suporte-e-resistencia': 'support-and-resistance',
+};
+
+/** Guia de indicador no idioma, a partir do slug em português. */
+export const guidePath = (ptSlug: string, lang: Lang) =>
+  lang === 'en' && GUIDE_SLUG_EN[ptSlug] ? `${ROUTES.indicators.en}/${GUIDE_SLUG_EN[ptSlug]}` : `${ROUTES.indicators.pt}/${ptSlug}`;
 
 export const langFromPath = (pathname: string): Lang => (pathname === '/en' || pathname.startsWith('/en/') ? 'en' : 'pt');
 

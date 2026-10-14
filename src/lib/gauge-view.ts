@@ -125,10 +125,7 @@ function itemRows(items: GaugeItem[], close: number, kind: AssetKind, lang: Lang
     .map((item) => {
       const d = describe(item, close, kind, lang);
       const guide = GUIDE[item.id.replace(/\d+$/, '')];
-      // Guias só existem em português: avisa no título do link.
-      const name = guide
-        ? `<a href="${guidePath(guide)}" class="hover:text-accent"${lang === 'pt' ? '' : ` hreflang="pt-BR" title="Guide ${s.common.ptOnly}"`}>${d.name}</a>`
-        : d.name;
+      const name = guide ? `<a href="${guidePath(guide, lang)}" class="hover:text-accent">${d.name}</a>` : d.name;
       const r = VOTE_RATING[item.vote];
       return `<tr class="border-t border-border">
   <td class="py-2 pr-3"><span class="font-medium">${name}</span><span class="block text-xs text-muted">${d.rule}</span></td>

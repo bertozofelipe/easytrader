@@ -1,6 +1,6 @@
 ---
-import { getCollection, render } from 'astro:content';
-import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import IndicatorPage from '../../views/IndicatorPage.astro';
 
 export async function getStaticPaths() {
   const items = (await getCollection('indicadores')).sort((a, b) => a.data.ordem - b.data.ordem);
@@ -11,32 +11,6 @@ export async function getStaticPaths() {
 }
 
 const { item, prev, next } = Astro.props;
-const { Content } = await render(item);
 ---
 
-<Layout title={`${item.data.title} — o que é e como usar`} description={item.data.description}>
-  <nav class="text-sm text-muted mb-6" aria-label="Breadcrumb">
-    <a href="/indicadores" class="hover:text-text">Indicadores</a>
-    <span class="mx-1">/</span>
-    <span>{item.data.tipo}</span>
-  </nav>
-
-  <article class="prose-et max-w-3xl">
-    <h1>{item.data.title}</h1>
-    <p class="text-muted">{item.data.description}</p>
-    <Content />
-  </article>
-
-  {item.data.noGrafico && (
-    <p class="max-w-3xl mt-6 rounded-xl border border-accent/30 bg-accent/5 p-4 text-sm">
-      Veja este indicador ao vivo no gráfico do <a href="/ativos/btc" class="text-accent underline">Bitcoin</a> ou do{' '}
-      <a href="/ativos/eth" class="text-accent underline">Ethereum</a>.
-    </p>
-  )}
-
-  <nav class="max-w-3xl mt-8 flex justify-between gap-4 text-sm" aria-label="Outros indicadores">
-    {prev ? <a href={`/indicadores/${prev.id}`} class="hover:text-accent">← {prev.data.title}</a> : <span></span>}
-    {next ? <a href={`/indicadores/${next.id}`} class="hover:text-accent text-right">{next.data.title} →</a> : <span></span>}
-  </nav>
-  <p class="max-w-3xl text-xs text-muted mt-6">Conteúdo educacional. Não é recomendação de compra ou venda.</p>
-</Layout>
+<IndicatorPage lang="pt" item={item} prev={prev} next={next} />

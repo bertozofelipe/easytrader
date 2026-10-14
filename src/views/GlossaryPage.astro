@@ -1,0 +1,54 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { LOCALE, route, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+// Os termos usam o mesmo id nos dois idiomas, então as âncoras (#stop-loss) valem para ambos.
+const termos = (lang === 'en' ? await getCollection('glossaryEn') : await getCollection('glossario')).sort((a, b) =>
+  a.data.termo.localeCompare(b.data.termo, LOCALE[lang]),
+);
+const ids = new Set(termos.map((t) => t.id));
+const rendered = await Promise.all(termos.map(async (t) => ({ t, Content: (await render(t)).Content })));
+
+const T = {
+  pt: {
+    title: 'Glossário',
+    description: 'Glossário do trader: os termos do mercado financeiro e cripto explicados em português.',
+    subtitle: 'Os termos do mercado traduzidos para o português claro.',
+    seeAlso: 'Veja também:',
+  },
+  en: {
+    title: 'Glossary',
+    description: "Trader's glossary: financial market and crypto terms explained in plain English.",
+    subtitle: 'Market jargon explained in plain English.',
+    seeAlso: 'See also:',
+  },
+}[lang];
+---
+
+<Layout title={T.title} description={T.description} alternates={{ pt: route('glossary', 'pt'), en: route('glossary', 'en') }}>
+  <PageHeader title={T.title} subtitle={T.subtitle} />
+  <div class="space-y-4">
+    {rendered.map(({ t, Content }) => (
+      <article id={t.id} class="rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+        <h2 class="text-lg font-semibold">{t.data.termo}</h2>
+        <p class="text-muted text-sm mb-3">{t.data.resumo}</p>
+        <div class="prose-et text-sm"><Content /></div>
+        {t.data.relacionados.filter((r) => ids.has(r)).length > 0 && (
+          <p class="text-sm text-muted mt-2">
+            {T.seeAlso}{' '}
+            {t.data.relacionados.filter((r) => ids.has(r)).map((r, i) => (
+              <>{i > 0 && ', '}<a href={`#${r}`} class="text-accent">{termos.find((x) => x.id === r)?.data.termo}</a></>
+            ))}
+          </p>
+        )}
+      </article>
+    ))}
+  </div>
+</Layout>

@@ -1,37 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
-import Layout from '../../layouts/Layout.astro';
-import PageHeader from '../../components/PageHeader.astro';
-
-const items = (await getCollection('indicadores')).sort((a, b) => a.data.ordem - b.data.ordem);
+import IndicatorsPage from '../../views/IndicatorsPage.astro';
 ---
 
-<Layout title="Indicadores técnicos" description="Guia dos principais indicadores de análise técnica — médias móveis, RSI, MACD, Bollinger, estocástico, ATR, volume e suporte e resistência — explicados de forma simples.">
-  <PageHeader title="Indicadores técnicos" subtitle="O que cada indicador mede, como é calculado e como interpretar — sem complicação." />
-
-  <div class="grid gap-4 sm:grid-cols-2">
-    {items.map((i) => (
-      <a href={`/indicadores/${i.id}`} class="group rounded-xl border border-border bg-surface p-5 hover:border-accent/60 transition-colors">
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs uppercase tracking-wider text-accent">{i.data.tipo}</span>
-          {i.data.noGrafico && <span class="text-[10px] rounded-full border border-border px-2 py-0.5 text-muted">No gráfico Easytrader</span>}
-        </div>
-        <h2 class="font-semibold mt-1 group-hover:text-accent">{i.data.title}</h2>
-        <p class="text-sm text-muted mt-1">{i.data.description}</p>
-      </a>
-    ))}
-  </div>
-
-  <section class="mt-10 rounded-xl border border-border bg-surface p-5 max-w-3xl">
-    <h2 class="font-semibold mb-2">Antes de usar qualquer indicador</h2>
-    <ul class="list-disc pl-5 space-y-1 text-sm text-text/90">
-      <li>Indicadores são calculados a partir do preço passado: descrevem o que aconteceu, não garantem o que vai acontecer.</li>
-      <li>Nenhum indicador funciona sozinho. Combine tendência (médias), momento (RSI, MACD) e níveis de preço.</li>
-      <li>Teste em conta demo ou com valores pequenos antes de confiar numa leitura.</li>
-      <li>Gestão de risco (stop e tamanho da posição) importa mais do que o indicador escolhido.</li>
-    </ul>
-    <p class="text-sm mt-3">
-      Para praticar, abra um ativo cripto, como o <a href="/ativos/btc" class="text-accent">Bitcoin</a>, e ligue os indicadores no gráfico.
-    </p>
-  </section>
-</Layout>
+<IndicatorsPage lang="pt" />

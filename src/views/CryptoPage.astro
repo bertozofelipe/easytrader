@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import PageHeader from '../components/PageHeader.astro';
 import DataStamp from '../components/DataStamp.astro';
-import { ROUTES, route, type Lang } from '../i18n';
+import { route, type Lang } from '../i18n';
 import { loadData, type CryptoData, type SentimentData } from '../lib/market';
 import { renderCryptoKpis, renderCryptoRows, renderFearGreed, renderMovers } from '../lib/render';
 
@@ -35,7 +35,7 @@ const T = {
     kpis: 'Market stats',
     fng: 'Fear & Greed',
     fngDesc: 'Crypto market sentiment from 0 (extreme fear) to 100 (extreme greed).',
-    whatIs: 'What is it? (PT)',
+    whatIs: 'What is it?',
     gainers: 'Top gainers (24h)',
     losers: 'Top losers (24h)',
     top: 'Top 50 by market cap',
@@ -58,7 +58,7 @@ const th = T.th;
       <h2 class="font-semibold mb-1">{T.fng}</h2>
       <p class="text-xs text-muted mb-4">
         {T.fngDesc}
-        <a href={`${ROUTES.glossary.pt}#fear-and-greed`} class="text-accent">{T.whatIs}</a>
+        <a href={`${route('glossary', lang)}#fear-and-greed`} class="text-accent">{T.whatIs}</a>
       </p>
       <div data-fng>{sentiment && <Fragment set:html={renderFearGreed(sentiment, lang)} />}</div>
     </section>

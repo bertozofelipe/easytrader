@@ -82,7 +82,8 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Números, datas, "US$"/"$" e tempo relativo no formato de cada idioma; calculadoras leem "10.000"/"10,000" conforme o idioma
 - ✅ Em inglês: home, notícias (padrão: só em inglês), calendário, ativos (30 páginas), cripto, ferramentas, termômetro, sobre, aviso de risco, termos e privacidade
 - ✅ Calendário: seletor "Português | English" só do widget, lembrado no navegador; `/calendario` abre em português e `/en/calendar` em inglês
-- ⬜ Traduzir: 8 guias de indicadores, guia de eventos do calendário, glossário (hoje o inglês aponta para a versão em português)
+- ✅ 8 guias de indicadores em inglês (`/en/indicators/moving-averages`…) e glossário (`/en/glossary`); coleções `indicatorsEn` e `glossaryEn`, ligadas ao português pelo campo `pt` / mesmo id
+- ⬜ Traduzir o guia de eventos do calendário (hoje `/en/calendar` aponta para a versão em português)
 - ⬜ Sitemap com alternâncias de idioma (o plugin só pareia URLs com o mesmo caminho; os nossos são traduzidos)
 
 ## Etapa 6 — Lançamento ⬜ (~1 semana)

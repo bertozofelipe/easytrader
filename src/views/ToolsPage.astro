@@ -4,7 +4,7 @@ import PageHeader from '../components/PageHeader.astro';
 import PositionCalculator from '../components/PositionCalculator.astro';
 import CurrencyConverter from '../components/CurrencyConverter.astro';
 import PipCalculator from '../components/PipCalculator.astro';
-import { ROUTES, route, type Lang } from '../i18n';
+import { route, type Lang } from '../i18n';
 
 interface Props {
   lang: Lang;
@@ -30,7 +30,7 @@ const T = {
       },
       {
         title: 'Por que limitar o risco',
-        html: `Arriscando 1% por operação, dez perdas seguidas custam cerca de 10% da conta; arriscando 10%, custam mais de 65%. Veja também <a href="${ROUTES.glossary.pt}#stop-loss" class="text-accent">stop loss</a>.`,
+        html: `Arriscando 1% por operação, dez perdas seguidas custam cerca de 10% da conta; arriscando 10%, custam mais de 65%. Veja também <a href="${route('glossary', 'pt')}#stop-loss" class="text-accent">stop loss</a>.`,
       },
     ],
   },
@@ -51,7 +51,7 @@ const T = {
       },
       {
         title: 'Why cap your risk',
-        html: 'Risking 1% per trade, ten losses in a row cost about 10% of the account; risking 10%, they cost more than 65%.',
+        html: `Risking 1% per trade, ten losses in a row cost about 10% of the account; risking 10%, they cost more than 65%. See also <a href="${route('glossary', 'en')}#stop-loss" class="text-accent">stop loss</a>.`,
       },
     ],
   },

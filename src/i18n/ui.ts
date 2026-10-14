@@ -40,7 +40,6 @@ const pt = {
     quotes: 'Cotações',
     tickerNote: 'Dados com atraso. Câmbio: referência diária do BCE.',
     notAdvice: 'Informação educacional. Não é recomendação de compra ou venda.',
-    ptOnly: 'em português',
   },
   watch: {
     add: (name: string) => `Adicionar ${name} à sua lista`,
@@ -155,7 +154,6 @@ const en: UI = {
     quotes: 'Quotes',
     tickerNote: 'Delayed data. FX: ECB daily reference rates.',
     notAdvice: 'Educational information. Not a recommendation to buy or sell.',
-    ptOnly: 'in Portuguese',
   },
   watch: {
     add: (name) => `Add ${name} to your watchlist`,

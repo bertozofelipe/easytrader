@@ -5,7 +5,7 @@ import CryptoChart from '../components/CryptoChart.astro';
 import TechnicalGauge from '../components/TechnicalGauge.astro';
 import TradingViewChart from '../components/TradingViewChart.astro';
 import { assetName, datasetFor, type Asset } from '../data/assets';
-import { assetPath, ROUTES, route, type Lang } from '../i18n';
+import { assetPath, route, type Lang } from '../i18n';
 import { t } from '../i18n/ui';
 import { loadDatasets } from '../lib/market';
 import { kindLabel, renderAssetQuote, watchButton } from '../lib/render';
@@ -45,7 +45,7 @@ const T = {
     description: `Price, change, chart and technical gauge for ${name} (${asset.symbol}).`,
     source: { crypto: 'CoinGecko', fx: 'ECB (Frankfurter)', us: 'Finnhub', cboe: 'Cboe (15-min delay)' },
     chartTip: 'To add indicators (moving averages, RSI, MACD…), use the chart\'s <strong>Indicators</strong> button.',
-    learn: 'Learn about each one (in Portuguese)',
+    learn: 'Learn about each one',
     about: 'About',
     text: {
       index: `${asset.symbol} is an ETF (exchange-traded fund) that tracks the ${asset.tracksEn ?? asset.tracks}. The price shown is the ETF's, not the index points, but the percentage change closely follows the index.`,
@@ -84,7 +84,7 @@ const about = T.custom ?? T.text[asset.kind];
   {!asset.binance && (
     <p class="text-xs text-muted mt-2">
       <Fragment set:html={T.chartTip} />
-      <a href={ROUTES.indicators.pt} class="text-accent" hreflang={lang === 'pt' ? undefined : 'pt-BR'}>{T.learn}</a>.
+      <a href={route('indicators', lang)} class="text-accent">{T.learn}</a>.
     </p>
   )}
 

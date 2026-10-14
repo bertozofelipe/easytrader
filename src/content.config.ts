@@ -35,4 +35,29 @@ const indicadores = defineCollection({
   }),
 });
 
-export const collections = { escola, glossario, indicadores };
+// Traduções em inglês. Guias têm endereço próprio em inglês e apontam para o
+// guia em português pelo campo `pt`; termos do glossário usam o mesmo id.
+const indicatorsEn = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/en/indicators' }),
+  schema: z.object({
+    title: z.string(),
+    sigla: z.string(),
+    description: z.string(),
+    tipo: z.enum(['Trend', 'Momentum', 'Volatility', 'Volume', 'Price levels']),
+    ordem: z.number(),
+    noGrafico: z.boolean().default(false),
+    /** Slug do mesmo guia em português. */
+    pt: z.string(),
+  }),
+});
+
+const glossaryEn = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/en/glossary' }),
+  schema: z.object({
+    termo: z.string(),
+    resumo: z.string(),
+    relacionados: z.array(z.string()).default([]),
+  }),
+});
+
+export const collections = { escola, glossario, indicadores, indicatorsEn, glossaryEn };

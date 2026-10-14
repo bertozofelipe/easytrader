@@ -13,7 +13,7 @@ const lang = langFromPath(Astro.url.pathname);
 
 const T = {
   pt: { timeframe: 'Tempo gráfico', tz: 'horário de Brasília', indicators: 'Indicadores', whatIs: (l: string) => `O que é ${l}?`, week: '1S', loading: 'Carregando gráfico…' },
-  en: { timeframe: 'Timeframe', tz: 'Brasília time (UTC−3)', indicators: 'Indicators', whatIs: (l: string) => `What is ${l}? (guide in Portuguese)`, week: '1W', loading: 'Loading chart…' },
+  en: { timeframe: 'Timeframe', tz: 'Brasília time (UTC−3)', indicators: 'Indicators', whatIs: (l: string) => `What is ${l}?`, week: '1W', loading: 'Loading chart…' },
 }[lang];
 
 const INTERVALS = [
@@ -44,7 +44,7 @@ const toggleLabel = (label: string) => (lang === 'en' ? label.replace(/^MM /, 'M
         <button type="button" data-indicator={t.id} aria-pressed="false" class="flex items-center gap-1.5 px-2 py-1 text-muted hover:text-text aria-pressed:bg-surface-2 aria-pressed:text-text">
           <span class="w-2.5 h-0.5 rounded" style={`background:${t.color}`}></span>{toggleLabel(t.label)}
         </button>
-        <a href={guidePath(t.guide)} class="px-1.5 py-1 border-l border-border text-muted hover:text-accent" title={T.whatIs(toggleLabel(t.label))} aria-label={T.whatIs(toggleLabel(t.label))}>?</a>
+        <a href={guidePath(t.guide, lang)} class="px-1.5 py-1 border-l border-border text-muted hover:text-accent" title={T.whatIs(toggleLabel(t.label))} aria-label={T.whatIs(toggleLabel(t.label))}>?</a>
       </span>
     ))}
   </div>

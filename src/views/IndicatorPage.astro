@@ -1,0 +1,58 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import { assetPath, guidePath, route, type Lang } from '../i18n';
+import { t } from '../i18n/ui';
+
+type Guide = CollectionEntry<'indicadores'> | CollectionEntry<'indicatorsEn'>;
+
+interface Props {
+  lang: Lang;
+  item: Guide;
+  prev: Guide | null;
+  next: Guide | null;
+}
+
+const { lang, item, prev, next } = Astro.props;
+const { Content } = await render(item);
+const base = route('indicators', lang);
+// Slug em português: liga as duas versões do guia (hreflang e seletor de idioma).
+const ptSlug = 'pt' in item.data ? item.data.pt : item.id;
+
+const T = {
+  pt: {
+    title: `${item.data.title} — o que é e como usar`,
+    breadcrumb: 'Indicadores',
+    live: `Veja este indicador ao vivo no gráfico do <a href="${assetPath('btc', 'pt')}" class="text-accent underline">Bitcoin</a> ou do <a href="${assetPath('eth', 'pt')}" class="text-accent underline">Ethereum</a>.`,
+    others: 'Outros indicadores',
+  },
+  en: {
+    title: `${item.data.title} — what it is and how to use it`,
+    breadcrumb: 'Indicators',
+    live: `See this indicator live on the <a href="${assetPath('btc', 'en')}" class="text-accent underline">Bitcoin</a> or <a href="${assetPath('eth', 'en')}" class="text-accent underline">Ethereum</a> chart.`,
+    others: 'Other indicators',
+  },
+}[lang];
+---
+
+<Layout title={T.title} description={item.data.description} alternates={{ pt: guidePath(ptSlug, 'pt'), en: guidePath(ptSlug, 'en') }}>
+  <nav class="text-sm text-muted mb-6" aria-label="Breadcrumb">
+    <a href={base} class="hover:text-text">{T.breadcrumb}</a>
+    <span class="mx-1">/</span>
+    <span>{item.data.tipo}</span>
+  </nav>
+
+  <article class="prose-et max-w-3xl">
+    <h1>{item.data.title}</h1>
+    <p class="text-muted">{item.data.description}</p>
+    <Content />
+  </article>
+
+  {item.data.noGrafico && <p class="max-w-3xl mt-6 rounded-xl border border-accent/30 bg-accent/5 p-4 text-sm" set:html={T.live} />}
+
+  <nav class="max-w-3xl mt-8 flex justify-between gap-4 text-sm" aria-label={T.others}>
+    {prev ? <a href={`${base}/${prev.id}`} class="hover:text-accent">← {prev.data.title}</a> : <span></span>}
+    {next ? <a href={`${base}/${next.id}`} class="hover:text-accent text-right">{next.data.title} →</a> : <span></span>}
+  </nav>
+  <p class="max-w-3xl text-xs text-muted mt-6">{t(lang).common.notAdvice}</p>
+</Layout>

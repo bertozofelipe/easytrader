@@ -1,0 +1,72 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { assetPath, route, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const items = (lang === 'en' ? await getCollection('indicatorsEn') : await getCollection('indicadores')).sort((a, b) => a.data.ordem - b.data.ordem);
+const base = route('indicators', lang);
+
+const T = {
+  pt: {
+    title: 'Indicadores técnicos',
+    description:
+      'Guia dos principais indicadores de análise técnica — médias móveis, RSI, MACD, Bollinger, estocástico, ATR, volume e suporte e resistência — explicados de forma simples.',
+    subtitle: 'O que cada indicador mede, como é calculado e como interpretar — sem complicação.',
+    onChart: 'No gráfico Easytrader',
+    before: 'Antes de usar qualquer indicador',
+    tips: [
+      'Indicadores são calculados a partir do preço passado: descrevem o que aconteceu, não garantem o que vai acontecer.',
+      'Nenhum indicador funciona sozinho. Combine tendência (médias), momento (RSI, MACD) e níveis de preço.',
+      'Teste em conta demo ou com valores pequenos antes de confiar numa leitura.',
+      'Gestão de risco (stop e tamanho da posição) importa mais do que o indicador escolhido.',
+    ],
+    practice: `Para praticar, abra um ativo cripto, como o <a href="${assetPath('btc', 'pt')}" class="text-accent">Bitcoin</a>, e ligue os indicadores no gráfico. Cada ativo também tem um termômetro técnico que resume 19 indicadores.`,
+  },
+  en: {
+    title: 'Technical indicators',
+    description:
+      'A guide to the main technical analysis indicators — moving averages, RSI, MACD, Bollinger Bands, stochastic, ATR, volume and support and resistance — explained in plain English.',
+    subtitle: 'What each indicator measures, how it is calculated and how to read it — no jargon overload.',
+    onChart: "On Easytrader's chart",
+    before: 'Before using any indicator',
+    tips: [
+      'Indicators are calculated from past prices: they describe what happened and do not guarantee what will happen.',
+      'No indicator works alone. Combine trend (moving averages), momentum (RSI, MACD) and price levels.',
+      'Test on a demo account or with small amounts before trusting a reading.',
+      'Risk management (stop and position size) matters more than the indicator you choose.',
+    ],
+    practice: `To practice, open a crypto asset such as <a href="${assetPath('btc', 'en')}" class="text-accent">Bitcoin</a> and turn on the indicators on the chart. Every asset also has a technical gauge that summarizes 19 indicators.`,
+  },
+}[lang];
+---
+
+<Layout title={T.title} description={T.description} alternates={{ pt: route('indicators', 'pt'), en: route('indicators', 'en') }}>
+  <PageHeader title={T.title} subtitle={T.subtitle} />
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    {items.map((i) => (
+      <a href={`${base}/${i.id}`} class="group rounded-xl border border-border bg-surface p-5 hover:border-accent/60 transition-colors">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs uppercase tracking-wider text-accent">{i.data.tipo}</span>
+          {i.data.noGrafico && <span class="text-[10px] rounded-full border border-border px-2 py-0.5 text-muted">{T.onChart}</span>}
+        </div>
+        <h2 class="font-semibold mt-1 group-hover:text-accent">{i.data.title}</h2>
+        <p class="text-sm text-muted mt-1">{i.data.description}</p>
+      </a>
+    ))}
+  </div>
+
+  <section class="mt-10 rounded-xl border border-border bg-surface p-5 max-w-3xl">
+    <h2 class="font-semibold mb-2">{T.before}</h2>
+    <ul class="list-disc pl-5 space-y-1 text-sm text-text/90">
+      {T.tips.map((tip) => <li>{tip}</li>)}
+    </ul>
+    <p class="text-sm mt-3" set:html={T.practice} />
+  </section>
+</Layout>
