@@ -4,6 +4,7 @@ import PageHeader from '../components/PageHeader.astro';
 import PositionCalculator from '../components/PositionCalculator.astro';
 import CurrencyConverter from '../components/CurrencyConverter.astro';
 import PipCalculator from '../components/PipCalculator.astro';
+import PropFirmCalculator from '../components/PropFirmCalculator.astro';
 import { route, type Lang } from '../i18n';
 
 interface Props {
@@ -15,72 +16,249 @@ const { lang } = Astro.props;
 const T = {
   pt: {
     title: 'Ferramentas',
-    description: 'Calculadora de tamanho de posição e risco-retorno, conversor de moedas e cripto e calculadora de pip para forex.',
-    subtitle: 'Calculadoras para planejar cada operação antes de entrar.',
-    nav: 'Ferramentas desta página',
-    chips: ['Tamanho de posição', 'Conversor', 'Pip (forex)'],
-    cards: [
+    description: 'Calculadoras para traders: tamanho de posição e risco-retorno, aprovação em teste de mesa, conversor de moedas e cripto e valor do pip.',
+    subtitle: 'Escolha a ferramenta que quer usar. A explicação de cada uma fica logo abaixo.',
+    nav: 'Escolha a ferramenta',
+    tools: [
       {
-        title: 'Como o cálculo funciona',
-        html: '<strong class="text-text">Valor em risco</strong> = capital × risco%.<br /><strong class="text-text">Tamanho</strong> = valor em risco ÷ |entrada − stop|.<br />Com R$ 10.000, risco de 1%, entrada 100 e stop 95: arrisca R$ 100, que ÷ 5 = 20 unidades.',
+        id: 'posicao',
+        label: 'Tamanho de posição',
+        desc: 'Quanto comprar ou vender arriscando só o que você definiu.',
+        cards: [
+          {
+            title: 'Como o cálculo funciona',
+            html: '<strong class="text-text">Valor em risco</strong> = capital × risco%.<br /><strong class="text-text">Tamanho</strong> = valor em risco ÷ |entrada − stop|.<br />Com R$ 10.000, risco de 1%, entrada 100 e stop 95: arrisca R$ 100, que ÷ 5 = 20 unidades.',
+          },
+          {
+            title: 'Risco-retorno',
+            html: 'Compara o ganho até o alvo com a perda até o stop. Com 1:2, um acerto paga duas perdas, e basta acertar mais de 33% das vezes para não perder dinheiro (antes de custos).',
+          },
+          {
+            title: 'Por que limitar o risco',
+            html: `Arriscando 1% por operação, dez perdas seguidas custam cerca de 10% da conta; arriscando 10%, custam mais de 65%. Veja também <a href="${route('glossary', 'pt')}#stop-loss" class="text-accent">stop loss</a>.`,
+          },
+        ],
       },
       {
-        title: 'Risco-retorno',
-        html: 'Compara o ganho até o alvo com a perda até o stop. Com 1:2, um acerto paga duas perdas, e basta acertar mais de 33% das vezes para não perder dinheiro (antes de custos).',
+        id: 'mesa',
+        label: 'Aprovação em mesa',
+        desc: 'Chance de passar no desafio de uma mesa proprietária.',
+        cards: [
+          {
+            title: 'O que é o teste de mesa',
+            html: 'Mesas proprietárias (prop firms) oferecem capital depois de um desafio: bater uma <strong class="text-text">meta de lucro</strong> sem ultrapassar a <strong class="text-text">perda máxima total</strong>, a <strong class="text-text">perda diária</strong> e, às vezes, o prazo. Cada regra violada reprova a tentativa.',
+          },
+          {
+            title: 'Como a simulação funciona',
+            html: 'Cada operação ganha <em>risco × retorno/risco</em> com probabilidade igual à sua taxa de acerto, ou perde o risco. A ferramenta repete o desafio 5.000 vezes e conta quantas terminam na meta, em cada limite estourado ou no fim do prazo. Com os mesmos números, o resultado é sempre o mesmo.',
+          },
+          {
+            title: 'Como interpretar',
+            html: 'Risco menor por operação afasta os limites, mas alonga o caminho até a meta; risco maior faz o contrário. Se o <strong class="text-text">ganho esperado por operação</strong> é negativo, a aprovação depende de sorte. É uma estimativa baseada nos números que você informa, não uma promessa de resultado.',
+          },
+        ],
       },
       {
-        title: 'Por que limitar o risco',
-        html: `Arriscando 1% por operação, dez perdas seguidas custam cerca de 10% da conta; arriscando 10%, custam mais de 65%. Veja também <a href="${route('glossary', 'pt')}#stop-loss" class="text-accent">stop loss</a>.`,
+        id: 'conversor',
+        label: 'Conversor',
+        desc: 'Moedas e as 50 maiores criptomoedas, passando pelo dólar.',
+        cards: [
+          {
+            title: 'Como a conversão é feita',
+            html: 'O valor de origem é convertido para dólar e, dele, para o destino. Assim, qualquer combinação funciona: real para euro, bitcoin para iene, ether para real.',
+          },
+          {
+            title: 'De onde vêm as cotações',
+            html: 'Moedas usam a taxa de referência diária do Banco Central Europeu, publicada uma vez por dia útil. Cripto usa a CoinGecko, atualizada a cada 15 minutos.',
+          },
+          {
+            title: 'Valores indicativos',
+            html: 'Sua corretora, banco ou exchange aplica spread e taxas, então o valor recebido costuma ser um pouco menor que o convertido aqui.',
+          },
+        ],
+      },
+      {
+        id: 'pip',
+        label: 'Pip (forex)',
+        desc: 'Quanto vale cada pip na moeda da sua conta.',
+        cards: [
+          {
+            title: 'O que é um pip',
+            html: 'É a menor variação padrão de preço de um par de moedas: 0,0001 na maioria dos pares e 0,01 nos pares com iene. Serve de régua para medir stop, alvo e ganho ou perda.',
+          },
+          {
+            title: 'Como o valor é calculado',
+            html: '<strong class="text-text">Valor do pip</strong> = tamanho do pip × unidades da posição, na moeda de cotação do par, depois convertido para a moeda da sua conta. Um lote padrão são 100.000 unidades; mini é 0,1 e micro é 0,01 lote.',
+          },
+          {
+            title: 'Uso no planejamento',
+            html: 'Com o valor do pip, você traduz o stop em pips para dinheiro: stop de 20 pips × valor do pip = quanto perde se for atingido. Combine com o tamanho de posição para respeitar seu limite de risco.',
+          },
+        ],
       },
     ],
   },
   en: {
     title: 'Tools',
-    description: 'Position size and risk/reward calculator, currency and crypto converter, and forex pip calculator.',
-    subtitle: 'Calculators to plan every trade before you enter.',
-    nav: 'Tools on this page',
-    chips: ['Position size', 'Converter', 'Pip (forex)'],
-    cards: [
+    description: 'Calculators for traders: position size and risk/reward, prop firm challenge approval, currency and crypto converter, and pip value.',
+    subtitle: 'Pick the tool you want to use. Each one is explained right below it.',
+    nav: 'Choose a tool',
+    tools: [
       {
-        title: 'How the math works',
-        html: '<strong class="text-text">Amount at risk</strong> = account × risk%.<br /><strong class="text-text">Size</strong> = amount at risk ÷ |entry − stop|.<br />With $10,000, 1% risk, entry 100 and stop 95: you risk $100, and 100 ÷ 5 = 20 units.',
+        id: 'posicao',
+        label: 'Position size',
+        desc: 'How much to buy or sell while risking only what you set.',
+        cards: [
+          {
+            title: 'How the math works',
+            html: '<strong class="text-text">Amount at risk</strong> = account × risk%.<br /><strong class="text-text">Size</strong> = amount at risk ÷ |entry − stop|.<br />With $10,000, 1% risk, entry 100 and stop 95: you risk $100, and 100 ÷ 5 = 20 units.',
+          },
+          {
+            title: 'Risk/reward',
+            html: 'Compares the gain to the target with the loss to the stop. At 1:2, one win pays for two losses, and you only need to be right more than 33% of the time to break even (before costs).',
+          },
+          {
+            title: 'Why cap your risk',
+            html: `Risking 1% per trade, ten losses in a row cost about 10% of the account; risking 10%, they cost more than 65%. See also <a href="${route('glossary', 'en')}#stop-loss" class="text-accent">stop loss</a>.`,
+          },
+        ],
       },
       {
-        title: 'Risk/reward',
-        html: 'Compares the gain to the target with the loss to the stop. At 1:2, one win pays for two losses, and you only need to be right more than 33% of the time to break even (before costs).',
+        id: 'mesa',
+        label: 'Prop firm approval',
+        desc: 'Chance of passing a proprietary trading firm challenge.',
+        cards: [
+          {
+            title: 'What the challenge is',
+            html: 'Proprietary trading firms (prop firms) offer capital after a challenge: hit a <strong class="text-text">profit target</strong> without breaking the <strong class="text-text">maximum total loss</strong>, the <strong class="text-text">daily loss</strong> and, sometimes, the time limit. Breaking any rule fails the attempt.',
+          },
+          {
+            title: 'How the simulation works',
+            html: 'Each trade wins <em>risk × reward/risk</em> with probability equal to your win rate, or loses the risk. The tool repeats the challenge 5,000 times and counts how many end at the target, at each limit broken, or when time runs out. With the same numbers, the result is always the same.',
+          },
+          {
+            title: 'How to read it',
+            html: 'A smaller risk per trade keeps you away from the limits but lengthens the road to the target; a larger risk does the opposite. If the <strong class="text-text">expected gain per trade</strong> is negative, passing comes down to luck. It is an estimate based on the numbers you enter, not a promise of results.',
+          },
+        ],
       },
       {
-        title: 'Why cap your risk',
-        html: `Risking 1% per trade, ten losses in a row cost about 10% of the account; risking 10%, they cost more than 65%. See also <a href="${route('glossary', 'en')}#stop-loss" class="text-accent">stop loss</a>.`,
+        id: 'conversor',
+        label: 'Converter',
+        desc: 'Currencies and the top 50 cryptocurrencies, via the US dollar.',
+        cards: [
+          {
+            title: 'How the conversion works',
+            html: 'The source amount is converted to US dollars and then to the target. That way any pair works: real to euro, bitcoin to yen, ether to real.',
+          },
+          {
+            title: 'Where the rates come from',
+            html: 'Currencies use the European Central Bank daily reference rate, published once per business day. Crypto uses CoinGecko, updated every 15 minutes.',
+          },
+          {
+            title: 'Indicative values',
+            html: 'Your broker, bank or exchange applies spread and fees, so what you receive is usually a bit lower than the amount converted here.',
+          },
+        ],
+      },
+      {
+        id: 'pip',
+        label: 'Pip (forex)',
+        desc: 'What each pip is worth in your account currency.',
+        cards: [
+          {
+            title: 'What a pip is',
+            html: 'It is the standard smallest price move of a currency pair: 0.0001 for most pairs and 0.01 for yen pairs. It works as a ruler for stops, targets and profit or loss.',
+          },
+          {
+            title: 'How the value is calculated',
+            html: '<strong class="text-text">Pip value</strong> = pip size × position units, in the pair’s quote currency, then converted to your account currency. A standard lot is 100,000 units; mini is 0.1 and micro is 0.01 lot.',
+          },
+          {
+            title: 'Using it in planning',
+            html: 'With the pip value you turn a stop in pips into money: a 20-pip stop × pip value = what you lose if it is hit. Combine it with position size to respect your risk limit.',
+          },
+        ],
       },
     ],
   },
 }[lang];
-const anchors = ['#posicao', '#conversor', '#pip'];
 ---
 
 <Layout title={T.title} description={T.description} alternates={{ pt: route('tools', 'pt'), en: route('tools', 'en') }}>
   <PageHeader title={T.title} subtitle={T.subtitle} />
 
-  <nav aria-label={T.nav} class="flex flex-wrap gap-2 -mt-4 mb-6 text-sm">
-    {T.chips.map((label, i) => (
-      <a href={anchors[i]} class="rounded-full border border-border px-3 py-1 hover:text-accent hover:border-accent">{label}</a>
+  <div role="tablist" aria-label={T.nav} class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-6" data-tool-tabs>
+    {T.tools.map((tool, i) => (
+      <button
+        type="button"
+        role="tab"
+        id={`tab-${tool.id}`}
+        aria-controls={`panel-${tool.id}`}
+        aria-selected={i === 0 ? 'true' : 'false'}
+        tabindex={i === 0 ? 0 : -1}
+        data-tool={tool.id}
+        class="text-left rounded-xl border border-border bg-surface px-4 py-3 transition-colors hover:border-accent aria-selected:border-accent aria-selected:bg-surface-2 cursor-pointer"
+      >
+        <span class="block font-semibold">{tool.label}</span>
+        <span class="block text-xs text-muted mt-1">{tool.desc}</span>
+      </button>
     ))}
-  </nav>
-
-  <PositionCalculator />
-
-  <section class="grid gap-4 md:grid-cols-3 mt-6">
-    {T.cards.map((c) => (
-      <div class="rounded-xl border border-border bg-surface p-5">
-        <h3 class="font-semibold">{c.title}</h3>
-        <p class="text-sm text-muted mt-2 leading-relaxed" set:html={c.html} />
-      </div>
-    ))}
-  </section>
-
-  <div class="grid gap-6 lg:grid-cols-2 mt-6 items-start">
-    <CurrencyConverter />
-    <PipCalculator />
   </div>
+
+  {T.tools.map((tool, i) => (
+    <div role="tabpanel" id={`panel-${tool.id}`} aria-labelledby={`tab-${tool.id}`} hidden={i !== 0} data-tool-panel={tool.id}>
+      {tool.id === 'posicao' && <PositionCalculator />}
+      {tool.id === 'mesa' && <PropFirmCalculator />}
+      {tool.id === 'conversor' && <CurrencyConverter />}
+      {tool.id === 'pip' && <PipCalculator />}
+
+      <section class="grid gap-4 md:grid-cols-3 mt-6" aria-label={tool.label}>
+        {tool.cards.map((c) => (
+          <div class="rounded-xl border border-border bg-surface p-5">
+            <h3 class="font-semibold">{c.title}</h3>
+            <p class="text-sm text-muted mt-2 leading-relaxed" set:html={c.html} />
+          </div>
+        ))}
+      </section>
+    </div>
+  ))}
 </Layout>
+
+<script>
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>('[data-tool]')];
+  const panels = [...document.querySelectorAll<HTMLElement>('[data-tool-panel]')];
+
+  function select(id: string, focus = false) {
+    for (const tab of tabs) {
+      const on = tab.dataset.tool === id;
+      tab.setAttribute('aria-selected', String(on));
+      tab.tabIndex = on ? 0 : -1;
+      if (on && focus) tab.focus();
+    }
+    for (const panel of panels) panel.hidden = panel.dataset.toolPanel !== id;
+  }
+
+  const fromHash = () => {
+    const id = location.hash.slice(1);
+    if (tabs.some((t) => t.dataset.tool === id)) select(id);
+  };
+
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => {
+      select(tab.dataset.tool!);
+      history.replaceState(null, '', `#${tab.dataset.tool}`);
+    });
+    tab.addEventListener('keydown', (e) => {
+      const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      const next = tabs[(i + step + tabs.length) % tabs.length];
+      select(next.dataset.tool!, true);
+      history.replaceState(null, '', `#${next.dataset.tool}`);
+    });
+  });
+
+  fromHash();
+  window.addEventListener('hashchange', fromHash);
+</script>

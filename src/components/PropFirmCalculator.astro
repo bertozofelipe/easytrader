@@ -1,0 +1,287 @@
+---
+// Calculadora de aprovação em teste de mesa proprietária (prop firm), por simulação.
+import { langFromPath } from '../i18n';
+
+const lang = langFromPath(Astro.url.pathname);
+const field = 'w-full rounded-md border border-border bg-bg px-3 py-2 font-mono tabular-nums focus:outline-none focus:border-accent';
+
+const T = {
+  pt: {
+    title: 'Aprovação em teste de mesa',
+    lead: 'Informe as regras do desafio e o seu perfil de operação. A calculadora simula milhares de tentativas e mostra a chance de bater a meta antes de estourar um limite.',
+    rules: 'Regras da mesa',
+    profile: 'Seu perfil de operação',
+    target: 'Meta de lucro (%)',
+    maxLoss: 'Perda máxima total (%)',
+    dailyLoss: 'Perda máxima diária (%)',
+    days: 'Prazo (dias de operação)',
+    noLimit: '(opcional, vazio = sem limite)',
+    noDeadline: '(opcional, vazio = sem prazo)',
+    risk: 'Risco por operação (%)',
+    winRate: 'Taxa de acerto (%)',
+    rr: 'Retorno/risco (ganho ÷ risco)',
+    trades: 'Operações por dia',
+    fee: 'Preço do desafio',
+    optional: '(opcional)',
+    percentNote: 'Todos os percentuais são sobre a conta inicial. Aceita vírgula ou ponto como separador decimal.',
+    fill: 'Preencha as regras e o seu perfil para ver o resultado.',
+    chance: 'Chance de aprovação',
+    chanceNote: (runs: string) => `Em ${runs} tentativas simuladas.`,
+    passed: 'Bateu a meta',
+    failTotal: 'Estourou a perda total',
+    failDaily: 'Estourou a perda diária',
+    timeout: 'Acabou o prazo sem bater a meta',
+    expectancy: 'Ganho esperado por operação',
+    breakEven: 'Acerto mínimo para empatar',
+    medianDays: 'Tempo típico até a meta',
+    tradesAvg: 'Operações até a meta (na média)',
+    bust: 'Perdas seguidas que estouram o total',
+    bustDay: 'Perdas seguidas que estouram o dia',
+    costPerPass: 'Custo esperado por aprovação',
+    disclaimer:
+      'Simulação simplificada: cada operação ganha ou perde um valor fixo, com risco calculado sobre a conta inicial e sorteio independente. Não inclui custos, spread, slippage, regras de consistência, mínimo de dias de operação nem as sequências e emoções reais de um trader. O resultado vale pelas premissas que você informou e não garante aprovação. Ferramenta educacional; não é recomendação de investimento.',
+  },
+  en: {
+    title: 'Prop firm challenge approval',
+    lead: 'Enter the challenge rules and your trading profile. The calculator simulates thousands of attempts and shows the chance of hitting the target before breaking a limit.',
+    rules: 'Firm rules',
+    profile: 'Your trading profile',
+    target: 'Profit target (%)',
+    maxLoss: 'Maximum total loss (%)',
+    dailyLoss: 'Maximum daily loss (%)',
+    days: 'Time limit (trading days)',
+    noLimit: '(optional, empty = no limit)',
+    noDeadline: '(optional, empty = no limit)',
+    risk: 'Risk per trade (%)',
+    winRate: 'Win rate (%)',
+    rr: 'Reward/risk (gain ÷ risk)',
+    trades: 'Trades per day',
+    fee: 'Challenge price',
+    optional: '(optional)',
+    percentNote: 'All percentages are of the starting account.',
+    fill: 'Fill in the rules and your profile to see the result.',
+    chance: 'Chance of passing',
+    chanceNote: (runs: string) => `Across ${runs} simulated attempts.`,
+    passed: 'Hit the target',
+    failTotal: 'Broke the total loss limit',
+    failDaily: 'Broke the daily loss limit',
+    timeout: 'Ran out of time before the target',
+    expectancy: 'Expected gain per trade',
+    breakEven: 'Break-even win rate',
+    medianDays: 'Typical time to target',
+    tradesAvg: 'Trades to target (on average)',
+    bust: 'Losses in a row that break the total limit',
+    bustDay: 'Losses in a row that break the day',
+    costPerPass: 'Expected cost per pass',
+    disclaimer:
+      'Simplified simulation: each trade wins or loses a fixed amount, with risk measured on the starting account and independent draws. It excludes costs, spread, slippage, consistency rules, minimum trading days and the real streaks and emotions of a trader. The result is only as good as the assumptions you enter and does not guarantee a pass. Educational tool; it is not investment advice.',
+  },
+}[lang];
+---
+
+<section id="mesa" class="scroll-mt-20 rounded-xl border border-border bg-surface p-5" aria-labelledby="mesa-titulo" data-prop-calc>
+  <h2 id="mesa-titulo" class="text-xl font-semibold">{T.title}</h2>
+  <p class="text-sm text-muted mt-1 max-w-2xl">{T.lead}</p>
+
+  <div class="grid gap-6 lg:grid-cols-2 mt-5">
+    <form class="grid gap-4 sm:grid-cols-2 content-start" data-prop-form novalidate>
+      <h3 class="text-xs uppercase tracking-wider text-muted sm:col-span-2">{T.rules}</h3>
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.target}</span>
+        <input name="target" inputmode="decimal" autocomplete="off" value="10" class={field} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.maxLoss}</span>
+        <input name="maxLoss" inputmode="decimal" autocomplete="off" value="10" class={field} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.dailyLoss} <span class="text-muted text-xs">{T.noLimit}</span></span>
+        <input name="dailyLoss" inputmode="decimal" autocomplete="off" value="5" class={field} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.days} <span class="text-muted text-xs">{T.noDeadline}</span></span>
+        <input name="days" inputmode="numeric" autocomplete="off" value="30" class={field} />
+      </label>
+
+      <h3 class="text-xs uppercase tracking-wider text-muted sm:col-span-2 mt-2">{T.profile}</h3>
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.risk}</span>
+        <input name="risk" inputmode="decimal" autocomplete="off" value="1" class={field} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.winRate}</span>
+        <input name="winRate" inputmode="decimal" autocomplete="off" value="45" class={field} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.rr}</span>
+        <input name="rr" inputmode="decimal" autocomplete="off" value="2" class={field} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.trades}</span>
+        <input name="trades" inputmode="numeric" autocomplete="off" value="2" class={field} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm sm:col-span-2">
+        <span>{T.fee} <span class="text-muted text-xs">{T.optional}</span></span>
+        <input name="fee" inputmode="decimal" autocomplete="off" placeholder="500" class={field} />
+      </label>
+      <p class="text-xs text-muted sm:col-span-2">{T.percentNote}</p>
+    </form>
+
+    <div class="rounded-lg bg-surface-2/60 border border-border p-4" aria-live="polite">
+      <p class="text-sm text-muted" data-prop-msg>{T.fill}</p>
+      <div data-prop-result hidden>
+        <p class="text-sm text-muted">{T.chance}</p>
+        <p class="text-4xl font-bold font-mono tabular-nums" data-prop-out="pass"></p>
+        <p class="text-xs text-muted" data-prop-out="runs"></p>
+
+        <div class="flex h-2 w-full overflow-hidden rounded-full bg-surface-2 mt-4" aria-hidden="true">
+          <div class="bg-up" data-prop-bar="pass"></div>
+          <div class="bg-down" data-prop-bar="failTotal"></div>
+          <div class="bg-warn" data-prop-bar="failDaily"></div>
+          <div class="bg-muted/50" data-prop-bar="timeout"></div>
+        </div>
+        <dl class="grid gap-y-2 mt-3 text-sm">
+          <div class="flex justify-between gap-4"><dt class="text-muted"><span class="inline-block size-2 rounded-full bg-up mr-2"></span>{T.passed}</dt><dd class="font-mono tabular-nums" data-prop-out="passed"></dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-muted"><span class="inline-block size-2 rounded-full bg-down mr-2"></span>{T.failTotal}</dt><dd class="font-mono tabular-nums" data-prop-out="failTotal"></dd></div>
+          <div class="flex justify-between gap-4" data-prop-row="failDaily"><dt class="text-muted"><span class="inline-block size-2 rounded-full bg-warn mr-2"></span>{T.failDaily}</dt><dd class="font-mono tabular-nums" data-prop-out="failDaily"></dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-muted"><span class="inline-block size-2 rounded-full bg-muted/50 mr-2"></span>{T.timeout}</dt><dd class="font-mono tabular-nums" data-prop-out="timeout"></dd></div>
+        </dl>
+
+        <dl class="grid grid-cols-2 gap-x-4 gap-y-3 mt-4 pt-4 border-t border-border text-sm">
+          <div><dt class="text-xs text-muted">{T.expectancy}</dt><dd class="font-mono tabular-nums" data-prop-out="expectancy"></dd></div>
+          <div><dt class="text-xs text-muted">{T.breakEven}</dt><dd class="font-mono tabular-nums" data-prop-out="breakEven"></dd></div>
+          <div><dt class="text-xs text-muted">{T.medianDays}</dt><dd class="font-mono tabular-nums" data-prop-out="median"></dd></div>
+          <div><dt class="text-xs text-muted">{T.tradesAvg}</dt><dd class="font-mono tabular-nums" data-prop-out="tradesAvg"></dd></div>
+          <div><dt class="text-xs text-muted">{T.bust}</dt><dd class="font-mono tabular-nums" data-prop-out="bust"></dd></div>
+          <div data-prop-row="bustDay"><dt class="text-xs text-muted">{T.bustDay}</dt><dd class="font-mono tabular-nums" data-prop-out="bustDay"></dd></div>
+          <div data-prop-row="cost" class="col-span-2"><dt class="text-xs text-muted">{T.costPerPass}</dt><dd class="font-mono tabular-nums" data-prop-out="cost"></dd></div>
+        </dl>
+        <p class="text-xs text-warn mt-3" data-prop-out="warn" hidden></p>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-xs text-muted mt-4">{T.disclaimer}</p>
+</section>
+
+<script>
+  import { LOCALE, pageLang } from '../i18n';
+  import { parseNumber } from '../lib/position';
+  import { PROP_ERROR_MSG, simulateProp } from '../lib/prop-firm';
+
+  const lang = pageLang();
+  const S = {
+    pt: {
+      runs: (n: string) => `Em ${n} tentativas simuladas.`,
+      day: (n: number) => (n === 1 ? '1 dia' : `${n} dias`),
+      none: '—',
+      notReached: 'Não chega à meta na média',
+      expNegative: 'Com esse acerto e retorno/risco, a expectativa por operação é negativa: no longo prazo a conta tende a cair, e a aprovação depende de sorte.',
+      riskHigh: 'Risco por operação acima de 3% da conta: poucas perdas seguidas esgotam os limites.',
+    },
+    en: {
+      runs: (n: string) => `Across ${n} simulated attempts.`,
+      day: (n: number) => (n === 1 ? '1 day' : `${n} days`),
+      none: '—',
+      notReached: 'Does not reach the target on average',
+      expNegative: 'With this win rate and reward/risk, the expectancy per trade is negative: over time the account tends to fall, and passing comes down to luck.',
+      riskHigh: 'Risk per trade above 3% of the account: only a few losses in a row break the limits.',
+    },
+  }[lang];
+
+  const STORE_KEY = 'easytrader:prop-calc';
+  const NAMES = ['target', 'maxLoss', 'dailyLoss', 'days', 'risk', 'winRate', 'rr', 'trades', 'fee'] as const;
+  const root = document.querySelector<HTMLElement>('[data-prop-calc]');
+
+  if (root) {
+    const form = root.querySelector<HTMLFormElement>('[data-prop-form]')!;
+    const msg = root.querySelector<HTMLElement>('[data-prop-msg]')!;
+    const result = root.querySelector<HTMLElement>('[data-prop-result]')!;
+    const fillText = msg.textContent ?? '';
+    const input = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+    const out = (name: string) => root.querySelector<HTMLElement>(`[data-prop-out="${name}"]`)!;
+    const bar = (name: string) => root.querySelector<HTMLElement>(`[data-prop-bar="${name}"]`)!;
+    const row = (name: string) => root.querySelector<HTMLElement>(`[data-prop-row="${name}"]`)!;
+    const num = (name: string) => parseNumber(input(name).value, lang);
+    const blank = (name: string) => input(name).value.trim() === '';
+
+    const nf = (min: number, max: number) => new Intl.NumberFormat(LOCALE[lang], { minimumFractionDigits: min, maximumFractionDigits: max });
+    const pct = (v: number) => `${nf(0, 1).format(v)}%`;
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE_KEY) ?? '{}');
+      // Texto digitado: só restaura no mesmo idioma (vírgula e ponto mudam de papel).
+      if (saved.lang === lang) for (const n of NAMES) if (typeof saved[n] === 'string') input(n).value = saved[n];
+    } catch {
+      // Sem localStorage: usa o padrão.
+    }
+
+    const showMsg = (text: string, warn: boolean) => {
+      msg.textContent = text;
+      msg.className = `text-sm ${warn ? 'text-warn' : 'text-muted'}`;
+      msg.hidden = false;
+      result.hidden = true;
+    };
+
+    function update() {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify({ ...Object.fromEntries(NAMES.map((n) => [n, input(n).value])), lang }));
+      } catch {
+        // Ignora: só não fica salvo.
+      }
+
+      const dailyLoss = blank('dailyLoss') ? null : (num('dailyLoss') ?? NaN);
+      const maxDays = blank('days') ? null : (num('days') ?? NaN);
+      const numbers = [num('target'), num('maxLoss'), num('risk'), num('winRate'), num('rr'), num('trades')];
+      if (numbers.some((v) => v == null)) return showMsg(fillText, false);
+
+      const sim = simulateProp({
+        targetPct: numbers[0]!,
+        maxLossPct: numbers[1]!,
+        dailyLossPct: dailyLoss,
+        riskPct: numbers[2]!,
+        winRate: numbers[3]!,
+        rr: numbers[4]!,
+        tradesPerDay: numbers[5]!,
+        maxDays,
+        fee: blank('fee') ? null : num('fee'),
+      });
+      if (!sim.ok) return showMsg(PROP_ERROR_MSG[lang][sim.error], true);
+
+      const r = sim.result;
+      msg.hidden = true;
+      result.hidden = false;
+      out('pass').textContent = pct(r.passPct);
+      out('runs').textContent = S.runs(nf(0, 0).format(r.runs));
+      out('passed').textContent = pct(r.passPct);
+      out('failTotal').textContent = pct(r.failTotalPct);
+      out('failDaily').textContent = pct(r.failDailyPct);
+      out('timeout').textContent = pct(r.timeoutPct);
+      row('failDaily').hidden = dailyLoss == null;
+      bar('pass').style.width = `${r.passPct}%`;
+      bar('failTotal').style.width = `${r.failTotalPct}%`;
+      bar('failDaily').style.width = `${r.failDailyPct}%`;
+      bar('timeout').style.width = `${r.timeoutPct}%`;
+
+      const R = nf(0, 2).format(r.expectancyR);
+      out('expectancy').textContent = `${r.expectancyR > 0 ? '+' : ''}${R} R`;
+      out('breakEven').textContent = pct(r.breakEvenWinRate);
+      out('median').textContent = r.medianDays == null ? S.none : S.day(r.medianDays);
+      out('tradesAvg').textContent = r.tradesAtAverage == null ? S.notReached : nf(0, 0).format(r.tradesAtAverage);
+      out('bust').textContent = nf(0, 0).format(r.lossesToBust);
+      row('bustDay').hidden = r.lossesToDailyLimit == null;
+      if (r.lossesToDailyLimit != null) out('bustDay').textContent = nf(0, 0).format(r.lossesToDailyLimit);
+      row('cost').hidden = r.costPerPass == null;
+      if (r.costPerPass != null) out('cost').textContent = nf(2, 2).format(r.costPerPass);
+
+      const warn = out('warn');
+      const text = r.expectancyR <= 0 ? S.expNegative : numbers[2]! > 3 ? S.riskHigh : '';
+      warn.textContent = text;
+      warn.hidden = !text;
+    }
+
+    form.addEventListener('input', update);
+    form.addEventListener('submit', (e) => e.preventDefault());
+    update();
+  }
+</script>

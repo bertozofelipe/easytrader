@@ -64,6 +64,8 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Conversor entre 11 moedas (referência do BCE) e as 50 maiores cripto, com inversão e par lembrado no navegador
 - ✅ Calculadora de pip: 14 pares (principais, cruzados, USD/BRL e USD/MXN), valor por lote padrão/mini/micro na moeda da conta e valor de um movimento em pips
 - ✅ `fx.json` passou a trazer `rates` (1 USD = x moeda) para as 11 moedas, usado pelas duas ferramentas
+- ✅ Calculadora de aprovação em teste de mesa (prop firm): simula 5.000 tentativas (semente fixa) com meta, perda total e diária, prazo, risco, acerto e retorno/risco; mostra chance de passar, como reprova, tempo típico e custo esperado por aprovação
+- ✅ `/ferramentas` virou seletor: o usuário clica na ferramenta que quer habilitar (também por `#posicao`, `#mesa`, `#conversor`, `#pip`) e a explicação dela fica logo abaixo
 
 ## Termômetro técnico ✅ (14/10/2026)
 
