@@ -73,6 +73,9 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Faixas: forte alta · alta · neutro · baixa · forte baixa (viés, sem "compra/venda": conteúdo educacional e regra da CVM para recomendações)
 - ✅ Página do ativo: mostrador do resumo + médias móveis e osciladores, tabela dos 19 indicadores e "Como é calculado" (substitui a "Leitura dos indicadores" só de cripto)
 - ✅ `/ativos`: etiqueta do viés em cada ativo
+- ✅ Timeframes 15 min, 1H, 4H e diário no termômetro (seletor lembrado no navegador); intradiário em `signals-intraday.json`, recalculado a cada coleta
+- ✅ Cripto intradiário pela Binance; ações, ETFs e câmbio pela Twelve Data (barras de 15 min agrupadas em 1H/4H, conferidas com as barras nativas); VIX só diário
+- 👤 Criar conta gratuita na Twelve Data e cadastrar o secret `TWELVEDATA_API_KEY` no GitHub (sem ele, ações/ETFs/câmbio mostram só o diário). Uso estimado: ~570 de 800 consultas/dia
 
 ## Idiomas (português e inglês) 🔄 (primeira leva em 14/10/2026)
 

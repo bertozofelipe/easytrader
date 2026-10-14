@@ -123,6 +123,18 @@ export interface SignalsData extends Dataset {
   assets: Record<string, Gauge>;
 }
 
+export type IntradayTf = '15m' | '1h' | '4h';
+export type GaugeTf = IntradayTf | '1d';
+export const GAUGE_TFS: GaugeTf[] = ['15m', '1h', '4h', '1d'];
+
+/** Termômetro em 15 min, 1H e 4H (signals-intraday.json); `asOf` é o fechamento do candle (ISO). */
+export interface SignalsIntradayData extends Dataset {
+  failed: string[];
+  /** Coletor com chave da Twelve Data (ações, ETFs e câmbio). */
+  twelveData: boolean;
+  assets: Record<string, Partial<Record<IntradayTf, Gauge>> & { computedAt: string }>;
+}
+
 export type NewsCategory = 'mercados' | 'brasil' | 'forex' | 'cripto';
 
 export interface NewsItem {

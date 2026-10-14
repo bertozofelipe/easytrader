@@ -17,6 +17,7 @@ import { fetchUsQuotes } from './providers/finnhub.mjs';
 import { fetchNews } from './providers/rss.mjs';
 import { fetchCboeIndices } from './providers/cboe.mjs';
 import { fetchSignals } from './providers/history.mjs';
+import { fetchSignalsIntraday } from './providers/intraday.mjs';
 import { FEEDS, NEWS_MAX_AGE_HOURS, NEWS_MAX_TOTAL, NEWS_PER_FEED } from './feeds.mjs';
 
 const outFlag = process.argv.indexOf('--out');
@@ -30,6 +31,7 @@ const DATASETS = {
   cboe: () => fetchCboeIndices(CBOE_ASSETS),
   news: () => fetchNews(FEEDS, { maxAgeHours: NEWS_MAX_AGE_HOURS, perFeed: NEWS_PER_FEED, maxTotal: NEWS_MAX_TOTAL }),
   signals: () => fetchSignals(ASSETS),
+  'signals-intraday': () => fetchSignalsIntraday(ASSETS),
 };
 
 // Conjuntos baseados em candles diários: recalcula só quando a versão

@@ -1,13 +1,14 @@
 ---
-// Termômetro técnico do ativo: resumo de médias móveis e osciladores no
-// gráfico diário (calculado pelo coletor em signals.json). Educacional: mostra o
-// viés dos indicadores, sem recomendação de compra ou venda.
+// Termômetro técnico do ativo: resumo de médias móveis e osciladores em 15 min,
+// 1H, 4H e diário (calculado pelo coletor em signals.json e
+// signals-intraday.json). Educacional: mostra o viés dos indicadores, sem
+// recomendação de compra ou venda.
 import type { Asset } from '../data/assets';
 import { langFromPath, route } from '../i18n';
 import { t } from '../i18n/ui';
 import { MA_PERIODS } from '../lib/gauge';
 import { renderGauge } from '../lib/gauge-view';
-import { loadData, type SignalsData } from '../lib/market';
+import { GAUGE_TFS, loadData, type SignalsData } from '../lib/market';
 
 interface Props {
   asset: Asset;
@@ -16,6 +17,7 @@ interface Props {
 const { asset } = Astro.props;
 const lang = langFromPath(Astro.url.pathname);
 const s = t(lang).gauge;
+// O build mostra o diário; o navegador troca para o timeframe escolhido.
 const signals = await loadData<SignalsData>('signals');
 const gauge = signals?.assets[asset.slug];
 const periods = MA_PERIODS.join(', ');
@@ -27,34 +29,55 @@ const T = {
     how: 'Como é calculado',
     calculating: 'Calculando…',
     method: [
-      `<strong>Médias móveis (12):</strong> simples e exponenciais de ${periods} dias. Cada uma vota <em>alta</em> se o fechamento está acima dela e <em>baixa</em> se está abaixo.`,
+      `<strong>Médias móveis (12):</strong> simples e exponenciais de ${periods} períodos do timeframe escolhido (no diário, dias; no 1H, horas). Cada uma vota <em>alta</em> se o fechamento está acima dela e <em>baixa</em> se está abaixo.`,
       '<strong>Osciladores (7):</strong> RSI, estocástico, CCI, ADX, momento, MACD e %B de Bollinger. Cada um vota alta, neutro ou baixa pela regra mostrada na tabela.',
       'Cada grupo vira uma nota de −1 (todos em baixa) a +1 (todos em alta); o resumo é a média dos dois grupos, com peso igual. Faixas: <span class="text-up">forte alta</span> a partir de +0,5 · <span class="text-up">alta</span> acima de +0,1 · <span class="text-muted">neutro</span> entre −0,1 e +0,1 · <span class="text-down">baixa</span> abaixo de −0,1 · <span class="text-down">forte baixa</span> até −0,5.',
+      'Timeframes curtos mudam rápido e geram mais sinais contraditórios; o diário mostra a tendência de fundo. É comum os dois discordarem.',
     ],
-    fine: `Usa candles diários já fechados (cripto: Binance, 0h UTC; ações, ETFs e VIX: Cboe; câmbio: BCE) e é recalculado a cada poucas horas. Indicadores olham o passado: não preveem o preço e podem divergir entre si. Veja o <a href="${risk}" class="text-accent">aviso de risco</a>.`,
+    fine: `Usa só candles já fechados. Diário: cripto na Binance (0h UTC), ações, ETFs e VIX na Cboe, câmbio no BCE, recalculado a cada poucas horas. 15 min, 1H e 4H: cripto na Binance; ações, ETFs e câmbio na Twelve Data (candles de 15 min agrupados em 1H e 4H; ações no pregão regular de Nova York), recalculados a cada 15 min (câmbio a cada 30 min); o VIX só tem o diário. Indicadores olham o passado: não preveem o preço e podem divergir entre si. Veja o <a href="${risk}" class="text-accent">aviso de risco</a>.`,
   },
   en: {
     lead: 'Summarizes what the moving averages and oscillators are showing. It reflects the indicators’ bias and is not a recommendation to buy or sell.',
     how: 'How it is calculated',
     calculating: 'Calculating…',
     method: [
-      `<strong>Moving averages (12):</strong> simple and exponential, ${periods} days. Each one votes <em>bullish</em> if the close is above it and <em>bearish</em> if below.`,
+      `<strong>Moving averages (12):</strong> simple and exponential, ${periods} periods of the selected timeframe (days on the daily, hours on the 1H). Each one votes <em>bullish</em> if the close is above it and <em>bearish</em> if below.`,
       '<strong>Oscillators (7):</strong> RSI, stochastic, CCI, ADX, momentum, MACD and Bollinger %B. Each votes bullish, neutral or bearish using the rule shown in the table.',
       'Each group becomes a score from −1 (all bearish) to +1 (all bullish); the summary is the average of both groups, equally weighted. Bands: <span class="text-up">strong bullish</span> from +0.5 · <span class="text-up">bullish</span> above +0.1 · <span class="text-muted">neutral</span> between −0.1 and +0.1 · <span class="text-down">bearish</span> below −0.1 · <span class="text-down">strong bearish</span> at −0.5 or lower.',
+      'Short timeframes change quickly and produce more conflicting signals; the daily shows the underlying trend. It is common for them to disagree.',
     ],
-    fine: `Uses closed daily candles (crypto: Binance, 00:00 UTC; stocks, ETFs and VIX: Cboe; FX: ECB) and is recalculated every few hours. Indicators look backward: they do not predict price and may disagree with each other. See the <a href="${risk}" class="text-accent">risk disclaimer</a>.`,
+    fine: `Uses closed candles only. Daily: crypto from Binance (00:00 UTC), stocks, ETFs and VIX from Cboe, FX from the ECB, recalculated every few hours. 15m, 1H and 4H: crypto from Binance; stocks, ETFs and FX from Twelve Data (15-minute candles grouped into 1H and 4H; stocks in the regular New York session), recalculated every 15 minutes (FX every 30 minutes); the VIX has the daily only. Indicators look backward: they do not predict price and may disagree with each other. See the <a href="${risk}" class="text-accent">risk disclaimer</a>.`,
   },
 }[lang];
 ---
 
-<section class="rounded-xl border border-border bg-surface p-5" aria-labelledby="termometro" data-gauge data-slug={asset.slug} data-kind={asset.kind} data-key={gauge ? `${gauge.asOf}|${gauge.score}` : undefined}>
-  <div class="flex flex-wrap items-baseline justify-between gap-2">
-    <h2 id="termometro" class="text-xl font-semibold">
-      {s.title} <span class="ml-1 align-middle text-xs font-normal rounded-full border border-border px-2 py-0.5 text-muted">{s.daily}</span>
-    </h2>
-    <a href="#metodologia" class="text-sm text-accent" data-gauge-method-link>{T.how}</a>
+<section
+  class="rounded-xl border border-border bg-surface p-5"
+  aria-labelledby="termometro"
+  data-gauge
+  data-slug={asset.slug}
+  data-kind={asset.kind}
+  data-daily-only={asset.cboe ? 'true' : undefined}
+  data-key={gauge ? `1d|${gauge.asOf}|${gauge.score}` : undefined}
+>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h2 id="termometro" class="text-xl font-semibold">{s.title}</h2>
+    <div class="flex rounded-md border border-border text-xs overflow-hidden" role="group" aria-label={s.tfGroup}>
+      {GAUGE_TFS.map((tf, i) => (
+        <button
+          type="button"
+          data-gauge-tf={tf}
+          aria-pressed={tf === '1d' ? 'true' : 'false'}
+          class:list={['px-3 py-1 text-muted hover:text-text aria-pressed:bg-surface-2 aria-pressed:text-text aria-pressed:font-semibold', i > 0 && 'border-l border-border']}
+        >
+          {s.tf[tf]}
+        </button>
+      ))}
+    </div>
   </div>
-  <p class="text-xs text-muted mt-1">{T.lead}</p>
+  <p class="text-xs text-muted mt-2">
+    {T.lead} <a href="#metodologia" class="text-accent" data-gauge-method-link>{T.how}</a>
+  </p>
 
   <div class="mt-5" data-gauge-body>
     {gauge ? <Fragment set:html={renderGauge(gauge, asset.kind, lang)} /> : <p class="text-sm text-muted">{T.calculating}</p>}
@@ -72,34 +95,80 @@ const T = {
 <script>
   import type { AssetKind } from '../data/assets';
   import { pageLang } from '../i18n';
+  import { t } from '../i18n/ui';
   import { renderGauge } from '../lib/gauge-view';
   import { every, REFRESH_MS } from '../lib/live';
-  import { fetchLatest, type SignalsData } from '../lib/market';
+  import { fetchLatest, GAUGE_TFS, type GaugeTf, type SignalsData, type SignalsIntradayData } from '../lib/market';
 
+  const STORE_KEY = 'easytrader:gauge-tf';
   const root = document.querySelector<HTMLElement>('[data-gauge]');
   const lang = pageLang();
+  const s = t(lang).gauge;
+  const isTf = (v: unknown): v is GaugeTf => GAUGE_TFS.includes(v as GaugeTf);
 
   if (root) {
     const body = root.querySelector<HTMLElement>('[data-gauge-body]')!;
     const method = root.querySelector<HTMLDetailsElement>('[data-gauge-method]')!;
+    const slug = root.dataset.slug!;
+    const kind = root.dataset.kind as AssetKind;
     root.querySelector('[data-gauge-method-link]')!.addEventListener('click', () => (method.open = true));
     if (location.hash === '#metodologia') method.open = true;
 
+    let tf: GaugeTf = '1d';
+    try {
+      const saved = localStorage.getItem(STORE_KEY);
+      if (isTf(saved)) tf = saved;
+    } catch {
+      // Sem localStorage: começa no diário.
+    }
+
+    let daily: SignalsData | null = null;
+    let intraday: SignalsIntradayData | null = null;
     let shown = root.dataset.key ?? null;
-    every(REFRESH_MS, async () => {
-      const data = await fetchLatest<SignalsData>('signals');
-      const g = data?.assets[root.dataset.slug!];
+    const message = (text: string) => `<p class="text-sm text-muted py-6">${text}</p>`;
+
+    function draw() {
+      root!.querySelectorAll<HTMLElement>('[data-gauge-tf]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.gaugeTf === tf)));
+      const g = tf === '1d' ? daily?.assets[slug] : intraday?.assets[slug]?.[tf];
       if (!g) {
-        if (!shown) {
-          body.innerHTML = `<p class="text-sm text-muted">${lang === 'en' ? 'Gauge unavailable right now. Please try again later.' : 'Termômetro indisponível agora. Tente de novo mais tarde.'}</p>`;
-        }
+        // Antes de chegar qualquer dado, mantém o que o build mostrou.
+        if (!daily && !intraday) return;
+        shown = `${tf}|none`;
+        const text =
+          tf === '1d'
+            ? lang === 'en'
+              ? 'Gauge unavailable right now. Please try again later.'
+              : 'Termômetro indisponível agora. Tente de novo mais tarde.'
+            : root!.dataset.dailyOnly
+              ? s.vixDailyOnly
+              : s.unavailable(s.tfName[tf]);
+        body.innerHTML = message(text);
         return;
       }
       // Só redesenha quando muda, para não fechar a tabela aberta.
-      const key = `${g.asOf}|${g.score}`;
+      const key = `${tf}|${g.asOf}|${g.score}`;
       if (key === shown) return;
       shown = key;
-      body.innerHTML = renderGauge(g, root.dataset.kind as AssetKind, lang);
+      body.innerHTML = renderGauge(g, kind, lang, tf);
+    }
+
+    root.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-gauge-tf]');
+      const next = btn?.dataset.gaugeTf;
+      if (!isTf(next) || next === tf) return;
+      tf = next;
+      try {
+        localStorage.setItem(STORE_KEY, tf);
+      } catch {
+        // Ignora: a escolha só não fica salva.
+      }
+      draw();
+    });
+
+    draw();
+    every(REFRESH_MS, async () => {
+      [daily, intraday] = await Promise.all([fetchLatest<SignalsData>('signals'), fetchLatest<SignalsIntradayData>('signals-intraday')]);
+      draw();
     });
   }
 </script>

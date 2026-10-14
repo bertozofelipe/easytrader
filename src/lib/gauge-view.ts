@@ -4,8 +4,9 @@
 import type { AssetKind } from '../data/assets';
 import { guidePath, LOCALE, type Lang } from '../i18n';
 import { t } from '../i18n/ui';
-import { formatDate, formatPrice } from './format';
+import { formatDate, formatDateTime, formatPrice } from './format';
 import type { Gauge, GaugeGroup, GaugeItem, Rating, Vote } from './gauge';
+import type { GaugeTf } from './market';
 
 const RATING_TEXT: Record<Rating, string> = {
   'forte-alta': 'text-up',
@@ -147,10 +148,12 @@ function table(title: string, g: GaugeGroup, close: number, kind: AssetKind, lan
 </div>`;
 }
 
-/** Conteúdo do bloco "Termômetro técnico" de um ativo. */
-export function renderGauge(g: Gauge, kind: AssetKind, lang: Lang): string {
+/** Conteúdo do bloco "Termômetro técnico" de um ativo, no timeframe `tf`. */
+export function renderGauge(g: Gauge, kind: AssetKind, lang: Lang, tf: GaugeTf = '1d'): string {
   const s = t(lang).gauge;
   const total = g.ma.items.length + g.osc.items.length;
+  const footer =
+    tf === '1d' ? s.footer(total, formatDate(g.asOf, lang), kind === 'fx') : s.footerIntraday(total, s.tfName[tf], formatDateTime(g.asOf, lang));
   return `<div class="grid gap-6 md:grid-cols-[1.3fr_1fr_1fr] items-center">
   <div class="flex flex-col items-center text-center">
     ${dial(g.score, `${s.summary}: ${s.rating[g.rating]}`, 240)}
@@ -160,7 +163,7 @@ export function renderGauge(g: Gauge, kind: AssetKind, lang: Lang): string {
   ${miniGauge(s.ma, g.ma, lang)}
   ${miniGauge(s.osc, g.osc, lang)}
 </div>
-<p class="text-xs text-muted mt-4">${s.footer(total, formatDate(g.asOf, lang), kind === 'fx')}</p>
+<p class="text-xs text-muted mt-4">${footer}</p>
 <details class="mt-3 group">
   <summary class="cursor-pointer text-sm text-accent select-none">${s.showAll(total)}</summary>
   <div class="grid gap-6 lg:grid-cols-2 mt-3">
