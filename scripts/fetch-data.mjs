@@ -7,7 +7,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { CBOE_ASSETS, CRYPTO_TOP_N, FX_PAIRS, PREVIOUS_DATA_URL, TICKER_CRYPTO, US_SYMBOLS } from './config.mjs';
+import { CBOE_ASSETS, CRYPTO_TOP_N, FX_CURRENCIES, FX_PAIRS, PREVIOUS_DATA_URL, TICKER_CRYPTO, US_SYMBOLS } from './config.mjs';
 import { getJson } from './lib/http.mjs';
 import { fetchCrypto } from './providers/coingecko.mjs';
 import { fetchFearGreed } from './providers/alternative.mjs';
@@ -23,7 +23,7 @@ const OUT_DIR = outFlag > -1 ? process.argv[outFlag + 1] : '.data-out';
 const DATASETS = {
   crypto: () => fetchCrypto({ topN: CRYPTO_TOP_N }),
   sentiment: () => fetchFearGreed(),
-  fx: () => fetchFx(FX_PAIRS),
+  fx: () => fetchFx(FX_PAIRS, FX_CURRENCIES),
   us: () => fetchUsQuotes(US_SYMBOLS),
   cboe: () => fetchCboeIndices(CBOE_ASSETS),
   news: () => fetchNews(FEEDS, { maxAgeHours: NEWS_MAX_AGE_HOURS, perFeed: NEWS_PER_FEED, maxTotal: NEWS_MAX_TOTAL }),

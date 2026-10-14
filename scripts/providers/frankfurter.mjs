@@ -3,10 +3,12 @@ import { getJson } from '../lib/http.mjs';
 /**
  * Câmbio de referência do BCE (Frankfurter). Atualiza uma vez por dia útil.
  * Busca os últimos ~10 dias para calcular a variação contra o dia útil anterior.
+ * `rates` traz o último valor de cada moeda de `currencies` (1 USD = x moeda),
+ * usado pelo conversor e pela calculadora de pip.
  */
-export async function fetchFx(pairs) {
+export async function fetchFx(pairs, currencies = []) {
   const start = new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10);
-  const codes = pairs.map((p) => p.code).join(',');
+  const codes = [...new Set([...pairs.map((p) => p.code), ...currencies])].filter((c) => c !== 'USD').join(',');
   const { rates } = await getJson(`https://api.frankfurter.dev/v1/${start}..?base=USD&symbols=${codes}`);
 
   const dates = Object.keys(rates).sort();
@@ -29,5 +31,5 @@ export async function fetchFx(pairs) {
     };
   });
 
-  return { source: 'BCE (Frankfurter)', quotes };
+  return { source: 'BCE (Frankfurter)', quotes, rates: { base: 'USD', date: lastDate, values: rates[lastDate] } };
 }

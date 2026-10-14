@@ -1,6 +1,7 @@
 // Configuração dos coletores. A lista de ativos vem de src/data/assets.ts
 // (fonte única, compartilhada com o site).
 import { ASSETS, datasetFor } from '../src/data/assets.ts';
+import { CURRENCIES } from '../src/data/currencies.ts';
 
 export const REPO = 'bertozofelipe/easytrader';
 export const DATA_BRANCH = 'data';
@@ -26,6 +27,9 @@ export const FX_PAIRS = ASSETS.filter((a) => a.kind === 'fx').map((a) => ({
   invert: a.fx.invert,
   ticker: Boolean(a.ticker),
 }));
+
+// Moedas extras para o conversor e a calculadora de pip.
+export const FX_CURRENCIES = CURRENCIES.map((c) => c.code);
 
 // Índices calculados pela Cboe (VIX).
 export const CBOE_ASSETS = ASSETS.filter((a) => datasetFor(a) === 'cboe');

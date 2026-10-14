@@ -1,0 +1,136 @@
+---
+// Conversor entre moedas (referência do BCE) e as 50 maiores cripto (CoinGecko).
+import { ASSETS } from '../data/assets';
+import { CURRENCIES } from '../data/currencies';
+import { loadData, type CryptoData } from '../lib/market';
+
+const crypto = await loadData<CryptoData>('crypto');
+// Lista do build; os preços vêm do navegador. Sem dados no build, usa o cadastro.
+const coins = crypto?.coins.map((c) => ({ symbol: c.symbol, name: c.name })) ??
+  ASSETS.filter((a) => a.kind === 'crypto').map((a) => ({ symbol: a.symbol, name: a.name }));
+
+const field = 'w-full rounded-md border border-border bg-bg px-3 py-2 focus:outline-none focus:border-accent';
+---
+
+<section id="conversor" class="rounded-xl border border-border bg-surface p-5 scroll-mt-20" aria-labelledby="conv-titulo" data-converter>
+  <h2 id="conv-titulo" class="text-xl font-semibold">Conversor de moedas e cripto</h2>
+  <p class="text-sm text-muted mt-1">Converte entre 11 moedas e as 50 maiores criptomoedas, passando pelo dólar.</p>
+
+  <form class="grid gap-3 mt-5 sm:grid-cols-[1fr_auto_1fr] items-end" data-conv-form novalidate>
+    <label class="flex flex-col gap-1 text-sm sm:col-span-3">
+      <span>Valor</span>
+      <input name="amount" inputmode="decimal" autocomplete="off" value="1" class={`${field} font-mono tabular-nums`} />
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span>De</span>
+      <select name="from" class={field}>
+        <optgroup label="Moedas">{CURRENCIES.map((c) => <option value={c.code}>{c.code} · {c.name}</option>)}</optgroup>
+        <optgroup label="Cripto">{coins.map((c) => <option value={c.symbol} selected={c.symbol === 'BTC'}>{c.symbol} · {c.name}</option>)}</optgroup>
+      </select>
+    </label>
+    <button type="button" data-conv-swap class="justify-self-center rounded-md border border-border px-3 py-2 text-muted hover:text-accent hover:border-accent" aria-label="Inverter moedas" title="Inverter moedas">⇄</button>
+    <label class="flex flex-col gap-1 text-sm">
+      <span>Para</span>
+      <select name="to" class={field}>
+        <optgroup label="Moedas">{CURRENCIES.map((c) => <option value={c.code} selected={c.code === 'BRL'}>{c.code} · {c.name}</option>)}</optgroup>
+        <optgroup label="Cripto">{coins.map((c) => <option value={c.symbol}>{c.symbol} · {c.name}</option>)}</optgroup>
+      </select>
+    </label>
+  </form>
+
+  <div class="rounded-lg bg-surface-2/60 border border-border p-4 mt-4" aria-live="polite">
+    <p class="text-3xl font-bold font-mono tabular-nums break-all" data-conv-result>…</p>
+    <p class="text-sm text-muted font-mono tabular-nums mt-1" data-conv-rate>Carregando cotações…</p>
+  </div>
+
+  <p class="text-xs text-muted mt-3" data-conv-source>
+    Moedas: taxa de referência diária do Banco Central Europeu. Cripto: CoinGecko, atualizada a cada 15 min. Valores
+    indicativos; a cotação da sua corretora ou banco inclui spread e taxas.
+  </p>
+</section>
+
+<script>
+  import { CURRENCIES } from '../data/currencies';
+  import { convert, type UsdTable } from '../lib/fx';
+  import { fxDate, loadFxSnapshot } from '../lib/fx-data';
+  import { formatRelative } from '../lib/format';
+  import { every, REFRESH_MS } from '../lib/live';
+  import { parseNumber } from '../lib/position';
+
+  const STORE_KEY = 'easytrader:converter';
+  const root = document.querySelector<HTMLElement>('[data-converter]');
+
+  if (root) {
+    const form = root.querySelector<HTMLFormElement>('[data-conv-form]')!;
+    const resultEl = root.querySelector<HTMLElement>('[data-conv-result]')!;
+    const rateEl = root.querySelector<HTMLElement>('[data-conv-rate]')!;
+    const sourceEl = root.querySelector<HTMLElement>('[data-conv-source]')!;
+    const amountInput = form.elements.namedItem('amount') as HTMLInputElement;
+    const fromSel = form.elements.namedItem('from') as HTMLSelectElement;
+    const toSel = form.elements.namedItem('to') as HTMLSelectElement;
+    let table: UsdTable = new Map();
+
+    const isFiat = (code: string) => CURRENCIES.some((c) => c.code === code);
+    const nf = (min: number, max: number) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: min, maximumFractionDigits: max });
+    /** Moedas com 2 casas; cripto e valores pequenos com mais casas. */
+    const fmt = (v: number, code: string) => {
+      const abs = Math.abs(v);
+      if (isFiat(code)) return nf(2, abs >= 1 ? 2 : 6).format(v);
+      return nf(2, abs >= 1000 ? 2 : abs >= 1 ? 6 : 8).format(v);
+    };
+    const hasOption = (sel: HTMLSelectElement, v: unknown) => typeof v === 'string' && [...sel.options].some((o) => o.value === v);
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE_KEY) ?? '{}');
+      if (hasOption(fromSel, saved.from)) fromSel.value = saved.from;
+      if (hasOption(toSel, saved.to)) toSel.value = saved.to;
+    } catch {
+      // Sem localStorage: usa o padrão.
+    }
+
+    function update() {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify({ from: fromSel.value, to: toSel.value }));
+      } catch {
+        // Ignora: só não fica salvo.
+      }
+      if (!table.size) return;
+
+      const from = fromSel.value;
+      const to = toSel.value;
+      const amount = parseNumber(amountInput.value);
+      const rate = convert(1, from, to, table);
+      if (rate == null) {
+        resultEl.textContent = '—';
+        rateEl.textContent = `Cotação de ${table.has(from) ? to : from} indisponível agora.`;
+        return;
+      }
+      resultEl.textContent = amount == null ? '—' : `${fmt(amount * rate, to)} ${to}`;
+      rateEl.textContent = `1 ${from} = ${fmt(rate, to)} ${to} · 1 ${to} = ${fmt(1 / rate, from)} ${from}`;
+    }
+
+    every(REFRESH_MS, async () => {
+      const snap = await loadFxSnapshot();
+      if (snap.table.size <= 1) {
+        if (!table.size) rateEl.textContent = 'Cotações indisponíveis agora. Tente de novo em alguns minutos.';
+        return;
+      }
+      table = snap.table;
+      const date = fxDate(snap.fx);
+      const parts = [
+        date && `Moedas: referência do Banco Central Europeu de ${date}.`,
+        snap.crypto && `Cripto: CoinGecko, atualizado ${formatRelative(snap.crypto.updatedAt)}.`,
+        'Valores indicativos; a cotação da sua corretora ou banco inclui spread e taxas.',
+      ];
+      sourceEl.textContent = parts.filter(Boolean).join(' ');
+      update();
+    });
+
+    form.addEventListener('input', update);
+    form.addEventListener('submit', (e) => e.preventDefault());
+    root.querySelector('[data-conv-swap]')!.addEventListener('click', () => {
+      [fromSel.value, toSel.value] = [toSel.value, fromSel.value];
+      update();
+    });
+  }
+</script>

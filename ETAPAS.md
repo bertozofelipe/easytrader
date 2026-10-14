@@ -55,13 +55,15 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ `/indicadores` com 8 guias: médias móveis, RSI, MACD, Bollinger, estocástico, ATR, volume, suporte e resistência
 - ✅ VIX (Cboe, pontos do índice, 15 min de atraso) em "Índices e commodities"
 
-## Etapa 5 — Escola v1 e ferramentas 🔄 (ferramentas prontas em 13/10/2026)
+## Etapa 5 — Escola v1 e ferramentas 🔄 (ferramentas prontas em 13/10/2026; aulas adiadas)
 
 - ⬜ Trilha "Fundamentos" com 8–10 aulas
 - ⬜ Glossário com ~50 termos
 - ✅ `/ferramentas`: calculadora de tamanho de posição e risco-retorno (compra ou venda pelo lado do stop, exposição/alavancagem, acerto mínimo para empatar, preenche a entrada com a cotação de qualquer ativo do cadastro; lembra capital e risco)
 - ✅ Watchlist no navegador: estrela nas listas de `/ativos` e botão "Acompanhar" na página do ativo; bloco "Sua lista" em `/ativos` e na home (só aparece se tiver ativos), sincronizado entre abas
-- ⬜ Opcional: conversor de moedas/cripto e calculadora de pip
+- ✅ Conversor entre 11 moedas (referência do BCE) e as 50 maiores cripto, com inversão e par lembrado no navegador
+- ✅ Calculadora de pip: 14 pares (principais, cruzados, USD/BRL e USD/MXN), valor por lote padrão/mini/micro na moeda da conta e valor de um movimento em pips
+- ✅ `fx.json` passou a trazer `rates` (1 USD = x moeda) para as 11 moedas, usado pelas duas ferramentas
 
 ## Etapa 6 — Lançamento ⬜ (~1 semana)
 

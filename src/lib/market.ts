@@ -80,6 +80,8 @@ export interface Quote {
 
 export interface QuotesData extends Dataset {
   quotes: Quote[];
+  /** Só em fx.json: 1 USD = values[código] (referência do BCE do dia `date`). */
+  rates?: { base: 'USD'; date: string; values: Record<string, number> };
 }
 
 const cache = new Map<string, Promise<unknown>>();

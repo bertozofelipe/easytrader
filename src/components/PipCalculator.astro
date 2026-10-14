@@ -1,0 +1,150 @@
+---
+// Calculadora de pip para forex: valor do pip na moeda da conta.
+import { CURRENCIES } from '../data/currencies';
+import { pairLabel, PIP_PAIRS } from '../lib/fx';
+
+const field = 'w-full rounded-md border border-border bg-bg px-3 py-2 focus:outline-none focus:border-accent';
+---
+
+<section id="pip" class="rounded-xl border border-border bg-surface p-5 scroll-mt-20" aria-labelledby="pip-titulo" data-pip-calc>
+  <h2 id="pip-titulo" class="text-xl font-semibold">Calculadora de pip</h2>
+  <p class="text-sm text-muted mt-1">Quanto vale cada pip de um par de moedas, já convertido para a moeda da sua conta.</p>
+
+  <form class="grid gap-3 mt-5 sm:grid-cols-2" data-pip-form novalidate>
+    <label class="flex flex-col gap-1 text-sm">
+      <span>Par</span>
+      <select name="pair" class={field}>
+        {PIP_PAIRS.map((p) => <option value={pairLabel(p)}>{pairLabel(p)}</option>)}
+      </select>
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span>Moeda da conta</span>
+      <select name="account" class={field}>
+        {CURRENCIES.map((c) => <option value={c.code}>{c.code} · {c.name}</option>)}
+      </select>
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span>Tamanho (lotes)</span>
+      <input name="lots" inputmode="decimal" autocomplete="off" value="1" class={`${field} font-mono tabular-nums`} />
+      <span class="text-xs text-muted">1 = padrão · 0,1 = mini · 0,01 = micro</span>
+    </label>
+    <label class="flex flex-col gap-1 text-sm">
+      <span>Movimento em pips <span class="text-muted">(opcional)</span></span>
+      <input name="pips" inputmode="decimal" autocomplete="off" placeholder="20" class={`${field} font-mono tabular-nums`} />
+    </label>
+  </form>
+
+  <div class="rounded-lg bg-surface-2/60 border border-border p-4 mt-4" aria-live="polite">
+    <p class="text-sm text-muted" data-pip-msg>Carregando cotações…</p>
+    <div data-pip-result hidden>
+      <p class="text-sm text-muted">Valor de 1 pip na sua posição</p>
+      <p class="text-3xl font-bold font-mono tabular-nums" data-pip-out="perPosition"></p>
+      <p class="text-sm mt-2" data-pip-out="move" hidden></p>
+      <dl class="grid grid-cols-3 gap-x-4 gap-y-3 mt-4 text-sm">
+        <div><dt class="text-xs text-muted">Lote padrão</dt><dd class="font-mono tabular-nums" data-pip-out="padrao"></dd></div>
+        <div><dt class="text-xs text-muted">Mini lote</dt><dd class="font-mono tabular-nums" data-pip-out="mini"></dd></div>
+        <div><dt class="text-xs text-muted">Micro lote</dt><dd class="font-mono tabular-nums" data-pip-out="micro"></dd></div>
+      </dl>
+      <p class="text-xs text-muted mt-3" data-pip-out="info"></p>
+    </div>
+  </div>
+
+  <p class="text-xs text-muted mt-3">
+    1 pip = 0,0001 (0,01 nos pares com iene). Lote padrão = 100.000 unidades da primeira moeda do par. A conversão usa a
+    referência diária do BCE; o valor na corretora pode variar um pouco com a cotação do momento.
+  </p>
+</section>
+
+<script>
+  import { calcPip, LOT_UNITS, PIP_PAIRS, pairLabel, type UsdTable } from '../lib/fx';
+  import { fxDate, loadFxSnapshot } from '../lib/fx-data';
+  import { every, REFRESH_MS } from '../lib/live';
+  import { parseNumber } from '../lib/position';
+
+  const STORE_KEY = 'easytrader:pip-calc';
+  const root = document.querySelector<HTMLElement>('[data-pip-calc]');
+
+  if (root) {
+    const form = root.querySelector<HTMLFormElement>('[data-pip-form]')!;
+    const msg = root.querySelector<HTMLElement>('[data-pip-msg]')!;
+    const result = root.querySelector<HTMLElement>('[data-pip-result]')!;
+    const el = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+    const out = (name: string) => root.querySelector<HTMLElement>(`[data-pip-out="${name}"]`)!;
+    let table: UsdTable = new Map();
+    let date: string | null = null;
+
+    const nf = (min: number, max: number) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: min, maximumFractionDigits: max });
+    const money = (v: number, code: string) => `${nf(2, 2).format(v)} ${code}`;
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE_KEY) ?? '{}');
+      for (const name of ['pair', 'account', 'lots'] as const) {
+        const field = el(name);
+        if (typeof saved[name] !== 'string') continue;
+        if (field instanceof HTMLSelectElement && ![...field.options].some((o) => o.value === saved[name])) continue;
+        field.value = saved[name];
+      }
+    } catch {
+      // Sem localStorage: usa o padrão.
+    }
+
+    const showMsg = (text: string, warn = false) => {
+      msg.textContent = text;
+      msg.className = `text-sm ${warn ? 'text-warn' : 'text-muted'}`;
+      msg.hidden = false;
+      result.hidden = true;
+    };
+
+    function update() {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify({ pair: el('pair').value, account: el('account').value, lots: el('lots').value }));
+      } catch {
+        // Ignora: só não fica salvo.
+      }
+      if (!table.size) return;
+
+      const pair = PIP_PAIRS.find((p) => pairLabel(p) === el('pair').value)!;
+      const account = el('account').value;
+      const lots = parseNumber(el('lots').value);
+      const pips = parseNumber(el('pips').value);
+      if (lots == null || !(lots > 0)) return showMsg('Informe o tamanho em lotes (maior que zero).', true);
+
+      const r = calcPip({ pair, lots, account, pips }, table);
+      if (!r) {
+        const missing = [...new Set([pair.quote, account])].filter((c) => !table.has(c));
+        return showMsg(`Cotação de ${missing.join(' e ')} indisponível agora.`, true);
+      }
+
+      msg.hidden = true;
+      result.hidden = false;
+      out('perPosition').textContent = money(r.perPosition, account);
+      out('padrao').textContent = money(r.perStandardLot, account);
+      out('mini').textContent = money(r.perStandardLot * (LOT_UNITS.mini / LOT_UNITS.padrao), account);
+      out('micro').textContent = money(r.perStandardLot * (LOT_UNITS.micro / LOT_UNITS.padrao), account);
+
+      const move = out('move');
+      move.hidden = r.move == null || pips === 0;
+      if (r.move != null) {
+        move.innerHTML = `Movimento de ${nf(0, 1).format(Math.abs(pips!))} pips: <span class="font-mono tabular-nums font-semibold">${money(Math.abs(r.move), account)}</span> de ganho ou perda.`;
+      }
+
+      const units = nf(0, 0).format(lots * LOT_UNITS.padrao);
+      const price = r.price == null ? '' : ` Preço de referência: ${nf(2, pair.quote === 'JPY' ? 3 : 5).format(r.price)}${date ? ` (BCE, ${date})` : ''}.`;
+      out('info').textContent = `${units} ${pair.base}; 1 pip = ${nf(2, 4).format(r.pipSize)} ${pair.quote}.${price}`;
+    }
+
+    every(REFRESH_MS, async () => {
+      const snap = await loadFxSnapshot();
+      if (snap.table.size <= 1) {
+        if (!table.size) showMsg('Cotações indisponíveis agora. Tente de novo em alguns minutos.', true);
+        return;
+      }
+      table = snap.table;
+      date = fxDate(snap.fx);
+      update();
+    });
+
+    form.addEventListener('input', update);
+    form.addEventListener('submit', (e) => e.preventDefault());
+  }
+</script>

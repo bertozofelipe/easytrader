@@ -1,15 +1,23 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PageHeader from '../components/PageHeader.astro';
+import CurrencyConverter from '../components/CurrencyConverter.astro';
+import PipCalculator from '../components/PipCalculator.astro';
 import { ASSET_GROUPS, ASSETS } from '../data/assets';
 
 const field = 'w-full rounded-md border border-border bg-bg px-3 py-2 font-mono tabular-nums focus:outline-none focus:border-accent';
 ---
 
-<Layout title="Ferramentas" description="Calculadora de tamanho de posição e risco-retorno: quanto comprar ou vender para arriscar só o que você definiu.">
+<Layout title="Ferramentas" description="Calculadora de tamanho de posição e risco-retorno, conversor de moedas e cripto e calculadora de pip para forex.">
   <PageHeader title="Ferramentas" subtitle="Calculadoras para planejar cada operação antes de entrar." />
 
-  <section class="rounded-xl border border-border bg-surface p-5" aria-labelledby="calc-titulo" data-position-calc>
+  <nav aria-label="Ferramentas desta página" class="flex flex-wrap gap-2 -mt-4 mb-6 text-sm">
+    <a href="#posicao" class="rounded-full border border-border px-3 py-1 hover:text-accent hover:border-accent">Tamanho de posição</a>
+    <a href="#conversor" class="rounded-full border border-border px-3 py-1 hover:text-accent hover:border-accent">Conversor</a>
+    <a href="#pip" class="rounded-full border border-border px-3 py-1 hover:text-accent hover:border-accent">Pip (forex)</a>
+  </nav>
+
+  <section id="posicao" class="scroll-mt-20 rounded-xl border border-border bg-surface p-5" aria-labelledby="calc-titulo" data-position-calc>
     <h2 id="calc-titulo" class="text-xl font-semibold">Tamanho de posição e risco-retorno</h2>
     <p class="text-sm text-muted mt-1 max-w-2xl">
       Você define quanto aceita perder se o stop for atingido; a calculadora diz o tamanho da posição que respeita esse limite.
@@ -116,9 +124,10 @@ const field = 'w-full rounded-md border border-border bg-bg px-3 py-2 font-mono 
     </div>
   </section>
 
-  <p class="text-sm text-muted mt-6">
-    Em breve: conversor de moedas e cripto, calculadora de pip para forex.
-  </p>
+  <div class="grid gap-6 lg:grid-cols-2 mt-6 items-start">
+    <CurrencyConverter />
+    <PipCalculator />
+  </div>
 </Layout>
 
 <script>
