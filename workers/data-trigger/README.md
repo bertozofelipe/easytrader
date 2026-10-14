@@ -18,6 +18,16 @@ Worker do Cloudflare que roda a cada 15 minutos e dispara o workflow [`data.yml`
 
    O último comando pede o token; cole quando solicitado.
 
+   **Alternativa sem terminal (painel do Cloudflare)**, na mesma conta do site:
+   Workers & Pages → Create → Worker `easytrader-data-trigger` → *Edit code*, colar `src/index.js` → Deploy;
+   Settings → Trigger events → Cron `*/15 * * * *`;
+   Settings → Variables and Secrets → Add, **Type: Secret** (não *Text*), nome `GITHUB_TOKEN`.
+   Se o painel sugerir copiar o token para o `wrangler.jsonc`, ignore: o repositório é público.
+
+## Renovar o token
+
+Gere um novo token (mesmas permissões) antes do vencimento e substitua o secret `GITHUB_TOKEN` no Worker (painel ou `wrangler secret put`). Apague o token antigo no GitHub.
+
 ## Conferir
 
 - Cloudflare → Workers & Pages → `easytrader-data-trigger` → *Logs* / *Cron events*.

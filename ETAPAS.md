@@ -17,7 +17,7 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Repositório público no GitHub: https://github.com/bertozofelipe/easytrader
 - ✅ Deploy automático no Cloudflare (Workers): https://easytrader.lf-bertozo.workers.dev
 
-## Etapa 1 — Núcleo de dados ✅ (13/10/2026, resta o agendamento confiável)
+## Etapa 1 — Núcleo de dados ✅ (13/10/2026)
 
 - ✅ `scripts/` com um *provider* por fonte: CoinGecko, alternative.me (Fear & Greed), Frankfurter (câmbio BCE), Finnhub (EUA)
 - ✅ GitHub Action a cada 15 min publicando os JSON no branch órfão `data` (1 commit, sem rebuild do site)
@@ -25,8 +25,9 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Top 50 cripto + dados globais, Fear & Greed, câmbio (EUR, GBP, JPY, BRL)
 - ✅ Faixa de cotações em todas as páginas, atualizada no navegador a cada 5 min, com "atualizado há X min"
 - ✅ Finnhub ativa (secret `FINNHUB_API_KEY`): ETFs de índices, ouro, petróleo e 7 ações dos EUA
-- ✅ Worker com Cron Trigger pronto em `workers/data-trigger/` (o cron do GitHub rodava em média a cada ~5,5 h)
-- 👤 Criar *fine-grained token* do GitHub e publicar o Worker (passo a passo em `workers/data-trigger/README.md`)
+- ✅ Worker com Cron Trigger em `workers/data-trigger/` (o cron do GitHub rodava em média a cada ~5,5 h)
+- ✅ Worker publicado pelo painel do Cloudflare com o secret `GITHUB_TOKEN`; disparando a cada 15 min desde 14/10/2026
+- 👤 Renovar o token do GitHub antes de vencer (validade de 1 ano, até ~10/2027)
 
 ## Etapa 2 — Cripto e ativos ✅ (13/10/2026)
 
