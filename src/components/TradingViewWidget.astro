@@ -1,6 +1,8 @@
 ---
 // Embed genérico de widgets gratuitos do TradingView.
 // O script do TradingView força height:100% no contêiner, então a altura fica no elemento de fora.
+// color-scheme normal: o iframe não declara tema; com o "dark" do site, o navegador
+// pintaria um fundo branco atrás do widget transparente (texto claro sobre branco).
 interface Props {
   /** Nome do script, ex.: "advanced-chart", "events". */
   widget: string;
@@ -14,7 +16,7 @@ const { widget, config, height, attribution } = Astro.props;
 
 <div class="rounded-xl border border-border bg-surface p-3">
   <div style={`height:${height}px`}>
-    <div class="tradingview-widget-container">
+    <div class="tradingview-widget-container" style="color-scheme: normal">
       <div class="tradingview-widget-container__widget"></div>
       <script is:inline type="text/javascript" src={`https://s3.tradingview.com/external-embedding/embed-widget-${widget}.js`} async set:html={JSON.stringify(config)} />
     </div>
