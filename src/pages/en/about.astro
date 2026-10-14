@@ -1,0 +1,20 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { SITE } from '../../config';
+import { route } from '../../i18n';
+---
+
+<Layout title="About" alternates={{ pt: route('about', 'pt'), en: route('about', 'en') }}>
+  <article class="prose-et max-w-3xl">
+    <h1>About Easytrader</h1>
+    <p>
+      Easytrader brings together what traders use every day: news, an economic calendar, asset analysis with a technical
+      gauge, technical indicators and trading calculators — focused on global markets and crypto.
+    </p>
+    <p>
+      The site started in Portuguese; the English version covers the main pages, and the indicator guides, glossary and
+      school are being translated.
+    </p>
+    <p>It is an independent, free and open-source project. <a href={SITE.repo}>See it on GitHub</a>.</p>
+  </article>
+</Layout>

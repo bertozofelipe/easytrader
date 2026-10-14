@@ -1,14 +1,15 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { route } from '../i18n';
 ---
 
-<Layout title="Termos de uso">
+<Layout title="Termos de uso" alternates={{ pt: route('terms', 'pt'), en: route('terms', 'en') }}>
   <article class="prose-et max-w-3xl">
     <h1>Termos de uso</h1>
     <p class="text-warn">Rascunho — revisar antes do lançamento.</p>
     <p>Ao usar o Easytrader você concorda com estes termos.</p>
     <h2>1. Natureza do conteúdo</h2>
-    <p>O conteúdo é educacional e informativo. Leia o <a href="/aviso-de-risco">aviso de risco</a>.</p>
+    <p>O conteúdo é educacional e informativo. Leia o <a href={route('risk', 'pt')}>aviso de risco</a>.</p>
     <h2>2. Dados de terceiros</h2>
     <p>Cotações, notícias e widgets são fornecidos por terceiros e seguem os termos desses provedores. Não garantimos exatidão, completude ou disponibilidade.</p>
     <h2>3. Propriedade intelectual</h2>

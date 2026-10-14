@@ -1,8 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { route } from '../i18n';
 ---
 
-<Layout title="Aviso de risco">
+<Layout title="Aviso de risco" alternates={{ pt: route('risk', 'pt'), en: route('risk', 'en') }}>
   <article class="prose-et max-w-3xl">
     <h1>Aviso de risco</h1>
     <p>

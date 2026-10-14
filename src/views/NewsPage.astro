@@ -1,0 +1,135 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import DataStamp from '../components/DataStamp.astro';
+import { route, type Lang } from '../i18n';
+import { t } from '../i18n/ui';
+import { loadData, type NewsData } from '../lib/market';
+import { renderNewsItems } from '../lib/render';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const news = await loadData<NewsData>('news');
+const sources = news ? [...new Set(news.items.map((n) => n.source))].sort() : [];
+
+const T = {
+  pt: {
+    title: 'Notícias',
+    description: 'Notícias do mercado global, Brasil, forex e cripto agregadas de fontes confiáveis, com link para a matéria original.',
+    subtitle: 'O que move o mercado, agregado de fontes confiáveis. Clique para ler a matéria completa no site original.',
+    all: 'Todas',
+    category: 'Categoria',
+    language: 'Idioma',
+    langs: [['todos', 'Todos os idiomas'], ['pt', 'Português'], ['en', 'Inglês']],
+    loading: 'Carregando notícias…',
+    empty: 'Nenhuma notícia nesse filtro nas últimas 48 horas.',
+    sources: (list: string) => `Fontes: ${list}. Os títulos e trechos pertencem aos respectivos veículos. O Easytrader não produz nem edita essas notícias.`,
+  },
+  en: {
+    title: 'News',
+    description: 'Global markets, Brazil, forex and crypto news aggregated from trusted sources, linking to the original article.',
+    subtitle: 'What moves the market, aggregated from trusted sources. Click to read the full story on the original site.',
+    all: 'All',
+    category: 'Category',
+    language: 'Language',
+    langs: [['todos', 'All languages'], ['en', 'English'], ['pt', 'Portuguese']],
+    loading: 'Loading news…',
+    empty: 'No news for this filter in the last 48 hours.',
+    sources: (list: string) => `Sources: ${list}. Headlines and excerpts belong to their publishers. Easytrader does not write or edit these stories.`,
+  },
+}[lang];
+
+const CATEGORIES = [['todas', T.all], ...Object.entries(t(lang).newsCategory)];
+// Padrão: em inglês, só notícias em inglês; em português, todos os idiomas.
+const defaultLang = lang === 'en' ? 'en' : 'todos';
+---
+
+<Layout title={T.title} description={T.description} alternates={{ pt: route('news', 'pt'), en: route('news', 'en') }}>
+  <PageHeader title={T.title} subtitle={T.subtitle} />
+
+  <div class="flex flex-col gap-3 mb-4" data-news-filters data-default-lang={defaultLang}>
+    <div class="flex flex-wrap gap-2" role="group" aria-label={T.category}>
+      {CATEGORIES.map(([id, label]) => (
+        <button type="button" data-filter-category={id} aria-pressed={id === 'todas' ? 'true' : 'false'} class="px-3 py-1.5 rounded-full border border-border text-sm text-muted hover:text-text aria-pressed:bg-accent aria-pressed:border-accent aria-pressed:text-white">
+          {label}
+        </button>
+      ))}
+    </div>
+    <div class="flex flex-wrap gap-2" role="group" aria-label={T.language}>
+      {T.langs.map(([id, label]) => (
+        <button type="button" data-filter-lang={id} aria-pressed={id === defaultLang ? 'true' : 'false'} class="px-3 py-1 rounded-full border border-border text-xs text-muted hover:text-text aria-pressed:bg-surface-2 aria-pressed:text-text">
+          {label}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <section class="rounded-xl border border-border bg-surface px-5 py-2">
+    <ul data-news-list>
+      {news ? <Fragment set:html={renderNewsItems(news.items, lang)} /> : <li class="py-6 text-center text-muted">{T.loading}</li>}
+    </ul>
+    <p class="py-6 text-center text-muted text-sm" data-news-empty hidden>{T.empty}</p>
+  </section>
+
+  <div class="mt-4 space-y-1">
+    <DataStamp name="news" updatedAt={news?.updatedAt} />
+    <p class="text-xs text-muted">{T.sources(sources.join(', ') || '—')}</p>
+  </div>
+</Layout>
+
+<script>
+  import { pageLang } from '../i18n';
+  import { fetchLatest, type NewsData } from '../lib/market';
+  import { renderNewsItems } from '../lib/render';
+  import { every, REFRESH_MS, setHtml, setStamp } from '../lib/live';
+
+  const lang = pageLang();
+  const filters = document.querySelector<HTMLElement>('[data-news-filters]')!;
+  // Filtro salvo por idioma da página: cada versão mantém o seu padrão.
+  const STORE_KEY = lang === 'en' ? 'easytrader:news-filter:en' : 'easytrader:news-filter';
+  const state = { category: 'todas', lang: filters.dataset.defaultLang ?? 'todos' };
+  try {
+    Object.assign(state, JSON.parse(localStorage.getItem(STORE_KEY) ?? '{}'));
+  } catch {
+    // Sem localStorage (modo privado etc.): usa o padrão.
+  }
+
+  function applyFilter() {
+    let visible = 0;
+    document.querySelectorAll<HTMLElement>('[data-news-list] li[data-category]').forEach((li) => {
+      const show =
+        (state.category === 'todas' || li.dataset.category === state.category) && (state.lang === 'todos' || li.dataset.lang === state.lang);
+      li.hidden = !show;
+      if (show) visible++;
+    });
+    document.querySelector<HTMLElement>('[data-news-empty]')!.hidden = visible > 0;
+    document.querySelectorAll<HTMLElement>('[data-filter-category]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filterCategory === state.category)));
+    document.querySelectorAll<HTMLElement>('[data-filter-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filterLang === state.lang)));
+  }
+
+  filters.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('button');
+    if (!btn) return;
+    if (btn.dataset.filterCategory) state.category = btn.dataset.filterCategory;
+    if (btn.dataset.filterLang) state.lang = btn.dataset.filterLang;
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    } catch {
+      // Ignora: o filtro só não fica salvo.
+    }
+    applyFilter();
+  });
+
+  applyFilter();
+
+  every(REFRESH_MS, async () => {
+    const news = await fetchLatest<NewsData>('news');
+    if (!news) return;
+    setHtml('[data-news-list]', renderNewsItems(news.items, lang, { now: Date.now() }));
+    setStamp('news', news.updatedAt);
+    applyFilter();
+  });
+</script>

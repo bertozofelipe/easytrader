@@ -1,4 +1,6 @@
 // Utilitários do navegador para atualizar blocos com os dados mais recentes.
+import { pageLang } from '../i18n';
+import { t } from '../i18n/ui';
 import { formatRelative } from './format';
 import { isStale } from './market';
 
@@ -9,7 +11,8 @@ export function setHtml(selector: string, html: string) {
 export function setStamp(name: string, updatedAt: string) {
   document.querySelectorAll<HTMLElement>(`[data-stamp="${name}"]`).forEach((el) => {
     const stale = isStale(updatedAt);
-    el.textContent = `${stale ? '⚠ ' : ''}Atualizado ${formatRelative(updatedAt)}`;
+    const lang = pageLang();
+    el.textContent = `${stale ? '⚠ ' : ''}${t(lang).common.updated} ${formatRelative(updatedAt, Date.now(), lang)}`;
     el.classList.toggle('text-warn', stale);
   });
 }

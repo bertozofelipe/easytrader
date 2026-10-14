@@ -1,63 +1,111 @@
 ---
 // Conversor entre moedas (referência do BCE) e as 50 maiores cripto (CoinGecko).
 import { ASSETS } from '../data/assets';
-import { CURRENCIES } from '../data/currencies';
+import { CURRENCIES, currencyName } from '../data/currencies';
+import { langFromPath } from '../i18n';
 import { loadData, type CryptoData } from '../lib/market';
 
+const lang = langFromPath(Astro.url.pathname);
 const crypto = await loadData<CryptoData>('crypto');
 // Lista do build; os preços vêm do navegador. Sem dados no build, usa o cadastro.
 const coins = crypto?.coins.map((c) => ({ symbol: c.symbol, name: c.name })) ??
   ASSETS.filter((a) => a.kind === 'crypto').map((a) => ({ symbol: a.symbol, name: a.name }));
 
 const field = 'w-full rounded-md border border-border bg-bg px-3 py-2 focus:outline-none focus:border-accent';
+
+const T = {
+  pt: {
+    title: 'Conversor de moedas e cripto',
+    lead: 'Converte entre 11 moedas e as 50 maiores criptomoedas, passando pelo dólar.',
+    amount: 'Valor',
+    from: 'De',
+    to: 'Para',
+    swap: 'Inverter moedas',
+    currencies: 'Moedas',
+    crypto: 'Cripto',
+    loading: 'Carregando cotações…',
+    source: 'Moedas: taxa de referência diária do Banco Central Europeu. Cripto: CoinGecko, atualizada a cada 15 min. Valores indicativos; a cotação da sua corretora ou banco inclui spread e taxas.',
+    defaultTo: 'BRL',
+  },
+  en: {
+    title: 'Currency and crypto converter',
+    lead: 'Converts between 11 currencies and the top 50 cryptocurrencies, via the US dollar.',
+    amount: 'Amount',
+    from: 'From',
+    to: 'To',
+    swap: 'Swap currencies',
+    currencies: 'Currencies',
+    crypto: 'Crypto',
+    loading: 'Loading rates…',
+    source: 'Currencies: European Central Bank daily reference rate. Crypto: CoinGecko, updated every 15 min. Indicative values; your broker or bank rate includes spread and fees.',
+    defaultTo: 'USD',
+  },
+}[lang];
 ---
 
 <section id="conversor" class="rounded-xl border border-border bg-surface p-5 scroll-mt-20" aria-labelledby="conv-titulo" data-converter>
-  <h2 id="conv-titulo" class="text-xl font-semibold">Conversor de moedas e cripto</h2>
-  <p class="text-sm text-muted mt-1">Converte entre 11 moedas e as 50 maiores criptomoedas, passando pelo dólar.</p>
+  <h2 id="conv-titulo" class="text-xl font-semibold">{T.title}</h2>
+  <p class="text-sm text-muted mt-1">{T.lead}</p>
 
   <form class="grid gap-3 mt-5 sm:grid-cols-[1fr_auto_1fr] items-end" data-conv-form novalidate>
     <label class="flex flex-col gap-1 text-sm sm:col-span-3">
-      <span>Valor</span>
+      <span>{T.amount}</span>
       <input name="amount" inputmode="decimal" autocomplete="off" value="1" class={`${field} font-mono tabular-nums`} />
     </label>
     <label class="flex flex-col gap-1 text-sm">
-      <span>De</span>
+      <span>{T.from}</span>
       <select name="from" class={field}>
-        <optgroup label="Moedas">{CURRENCIES.map((c) => <option value={c.code}>{c.code} · {c.name}</option>)}</optgroup>
-        <optgroup label="Cripto">{coins.map((c) => <option value={c.symbol} selected={c.symbol === 'BTC'}>{c.symbol} · {c.name}</option>)}</optgroup>
+        <optgroup label={T.currencies}>{CURRENCIES.map((c) => <option value={c.code}>{c.code} · {currencyName(c, lang)}</option>)}</optgroup>
+        <optgroup label={T.crypto}>{coins.map((c) => <option value={c.symbol} selected={c.symbol === 'BTC'}>{c.symbol} · {c.name}</option>)}</optgroup>
       </select>
     </label>
-    <button type="button" data-conv-swap class="justify-self-center rounded-md border border-border px-3 py-2 text-muted hover:text-accent hover:border-accent" aria-label="Inverter moedas" title="Inverter moedas">⇄</button>
+    <button type="button" data-conv-swap class="justify-self-center rounded-md border border-border px-3 py-2 text-muted hover:text-accent hover:border-accent" aria-label={T.swap} title={T.swap}>⇄</button>
     <label class="flex flex-col gap-1 text-sm">
-      <span>Para</span>
+      <span>{T.to}</span>
       <select name="to" class={field}>
-        <optgroup label="Moedas">{CURRENCIES.map((c) => <option value={c.code} selected={c.code === 'BRL'}>{c.code} · {c.name}</option>)}</optgroup>
-        <optgroup label="Cripto">{coins.map((c) => <option value={c.symbol}>{c.symbol} · {c.name}</option>)}</optgroup>
+        <optgroup label={T.currencies}>{CURRENCIES.map((c) => <option value={c.code} selected={c.code === T.defaultTo}>{c.code} · {currencyName(c, lang)}</option>)}</optgroup>
+        <optgroup label={T.crypto}>{coins.map((c) => <option value={c.symbol}>{c.symbol} · {c.name}</option>)}</optgroup>
       </select>
     </label>
   </form>
 
   <div class="rounded-lg bg-surface-2/60 border border-border p-4 mt-4" aria-live="polite">
     <p class="text-3xl font-bold font-mono tabular-nums break-all" data-conv-result>…</p>
-    <p class="text-sm text-muted font-mono tabular-nums mt-1" data-conv-rate>Carregando cotações…</p>
+    <p class="text-sm text-muted font-mono tabular-nums mt-1" data-conv-rate>{T.loading}</p>
   </div>
 
-  <p class="text-xs text-muted mt-3" data-conv-source>
-    Moedas: taxa de referência diária do Banco Central Europeu. Cripto: CoinGecko, atualizada a cada 15 min. Valores
-    indicativos; a cotação da sua corretora ou banco inclui spread e taxas.
-  </p>
+  <p class="text-xs text-muted mt-3" data-conv-source>{T.source}</p>
 </section>
 
 <script>
   import { CURRENCIES } from '../data/currencies';
+  import { formatDate, formatRelative } from '../lib/format';
   import { convert, type UsdTable } from '../lib/fx';
   import { fxDate, loadFxSnapshot } from '../lib/fx-data';
-  import { formatRelative } from '../lib/format';
+  import { LOCALE, pageLang } from '../i18n';
   import { every, REFRESH_MS } from '../lib/live';
   import { parseNumber } from '../lib/position';
 
-  const STORE_KEY = 'easytrader:converter';
+  const lang = pageLang();
+  const S = {
+    pt: {
+      unavailable: (code: string) => `Cotação de ${code} indisponível agora.`,
+      noData: 'Cotações indisponíveis agora. Tente de novo em alguns minutos.',
+      fx: (date: string) => `Moedas: referência do Banco Central Europeu de ${date}.`,
+      crypto: (when: string) => `Cripto: CoinGecko, atualizado ${when}.`,
+      note: 'Valores indicativos; a cotação da sua corretora ou banco inclui spread e taxas.',
+    },
+    en: {
+      unavailable: (code: string) => `${code} rate unavailable right now.`,
+      noData: 'Rates unavailable right now. Try again in a few minutes.',
+      fx: (date: string) => `Currencies: European Central Bank reference of ${date}.`,
+      crypto: (when: string) => `Crypto: CoinGecko, updated ${when}.`,
+      note: 'Indicative values; your broker or bank rate includes spread and fees.',
+    },
+  }[lang];
+
+  // Chave por idioma: cada versão da página tem o seu par padrão (BTC→BRL / BTC→USD).
+  const STORE_KEY = lang === 'en' ? 'easytrader:converter:en' : 'easytrader:converter';
   const root = document.querySelector<HTMLElement>('[data-converter]');
 
   if (root) {
@@ -71,7 +119,7 @@ const field = 'w-full rounded-md border border-border bg-bg px-3 py-2 focus:outl
     let table: UsdTable = new Map();
 
     const isFiat = (code: string) => CURRENCIES.some((c) => c.code === code);
-    const nf = (min: number, max: number) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: min, maximumFractionDigits: max });
+    const nf = (min: number, max: number) => new Intl.NumberFormat(LOCALE[lang], { minimumFractionDigits: min, maximumFractionDigits: max });
     /** Moedas com 2 casas; cripto e valores pequenos com mais casas. */
     const fmt = (v: number, code: string) => {
       const abs = Math.abs(v);
@@ -98,11 +146,11 @@ const field = 'w-full rounded-md border border-border bg-bg px-3 py-2 focus:outl
 
       const from = fromSel.value;
       const to = toSel.value;
-      const amount = parseNumber(amountInput.value);
+      const amount = parseNumber(amountInput.value, lang);
       const rate = convert(1, from, to, table);
       if (rate == null) {
         resultEl.textContent = '—';
-        rateEl.textContent = `Cotação de ${table.has(from) ? to : from} indisponível agora.`;
+        rateEl.textContent = S.unavailable(table.has(from) ? to : from);
         return;
       }
       resultEl.textContent = amount == null ? '—' : `${fmt(amount * rate, to)} ${to}`;
@@ -112,15 +160,15 @@ const field = 'w-full rounded-md border border-border bg-bg px-3 py-2 focus:outl
     every(REFRESH_MS, async () => {
       const snap = await loadFxSnapshot();
       if (snap.table.size <= 1) {
-        if (!table.size) rateEl.textContent = 'Cotações indisponíveis agora. Tente de novo em alguns minutos.';
+        if (!table.size) rateEl.textContent = S.noData;
         return;
       }
       table = snap.table;
       const date = fxDate(snap.fx);
       const parts = [
-        date && `Moedas: referência do Banco Central Europeu de ${date}.`,
-        snap.crypto && `Cripto: CoinGecko, atualizado ${formatRelative(snap.crypto.updatedAt)}.`,
-        'Valores indicativos; a cotação da sua corretora ou banco inclui spread e taxas.',
+        date && S.fx(formatDate(date, lang)),
+        snap.crypto && S.crypto(formatRelative(snap.crypto.updatedAt, Date.now(), lang)),
+        S.note,
       ];
       sourceEl.textContent = parts.filter(Boolean).join(' ');
       update();

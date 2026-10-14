@@ -6,25 +6,28 @@ interface Props {
   hideEmpty?: boolean;
 }
 
+import { langFromPath } from '../i18n';
+import { t } from '../i18n/ui';
+
 const { hideEmpty = false } = Astro.props;
+const s = t(langFromPath(Astro.url.pathname));
 ---
 
 <section class="rounded-xl border border-border bg-surface p-5" data-watchlist-box data-hide-empty={hideEmpty ? 'true' : undefined} hidden={hideEmpty}>
   <div class="flex items-baseline justify-between gap-2">
-    <h2 class="font-semibold">Sua lista</h2>
-    <span class="text-xs text-muted">Salva só neste navegador</span>
+    <h2 class="font-semibold">{s.watch.title}</h2>
+    <span class="text-xs text-muted">{s.watch.localOnly}</span>
   </div>
   <table class="w-full text-sm mt-2" data-watchlist-table hidden>
-    <thead class="sr-only"><tr><th>Acompanhar</th><th>Ativo</th><th>Preço</th><th>Variação</th></tr></thead>
+    <thead class="sr-only"><tr><th>{s.table.follow}</th><th>{s.table.asset}</th><th>{s.table.price}</th><th>{s.table.change}</th></tr></thead>
     <tbody data-watchlist-rows></tbody>
   </table>
-  <p class="text-sm text-muted mt-2" data-watchlist-empty>
-    Nenhum ativo ainda. Toque na estrela ao lado de um ativo para acompanhá-lo aqui.
-  </p>
+  <p class="text-sm text-muted mt-2" data-watchlist-empty>{s.watch.empty}</p>
 </section>
 
 <script>
   import { assetBySlug, datasetFor } from '../data/assets';
+  import { pageLang } from '../i18n';
   import { fetchDatasets, type Datasets } from '../lib/market';
   import { collectRows, renderAssetRows } from '../lib/render';
   import { every, REFRESH_MS } from '../lib/live';
@@ -37,6 +40,7 @@ const { hideEmpty = false } = Astro.props;
     const tbody = box.querySelector<HTMLElement>('[data-watchlist-rows]')!;
     const empty = box.querySelector<HTMLElement>('[data-watchlist-empty]')!;
     const hideEmpty = box.dataset.hideEmpty === 'true';
+    const lang = pageLang();
     let ds: Datasets = {};
 
     const render = (list: string[]) => {
@@ -44,7 +48,7 @@ const { hideEmpty = false } = Astro.props;
       table.hidden = list.length === 0;
       empty.hidden = list.length > 0;
       const bySlug = new Map(collectRows(ds).map((r) => [r.asset.slug, r]));
-      tbody.innerHTML = renderAssetRows(list.map((s) => bySlug.get(s)!).filter(Boolean), { watch: true });
+      tbody.innerHTML = renderAssetRows(list.map((s) => bySlug.get(s)!).filter(Boolean), lang, { watch: true });
       syncWatchButtons();
     };
 

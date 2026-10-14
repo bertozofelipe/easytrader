@@ -1,0 +1,159 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { EVENTOS } from '../data/eventos';
+import { route, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+const T = {
+  pt: {
+    title: 'Calendário econômico',
+    description: 'Calendário econômico global com horário de Brasília e nível de impacto, e guia dos eventos que mais movem o mercado.',
+    subtitle: 'Eventos que movem o mercado, com horário de Brasília, impacto e valores anterior, previsto e realizado.',
+    widgetLang: 'Idioma do calendário',
+    loading: 'Carregando calendário…',
+    tip: 'Dica: use os filtros do próprio calendário para escolher países e o nível de importância. Os horários são exibidos no fuso do seu navegador.',
+  },
+  en: {
+    title: 'Economic calendar',
+    description: 'Global economic calendar with impact level, plus a guide to the events that move markets the most.',
+    subtitle: 'Market-moving events with impact level and previous, forecast and actual values.',
+    widgetLang: 'Calendar language',
+    loading: 'Loading calendar…',
+    tip: "Tip: use the calendar's own filters to pick countries and importance. Times are shown in your browser's time zone.",
+  },
+}[lang];
+---
+
+<Layout title={T.title} description={T.description} alternates={{ pt: route('calendar', 'pt'), en: route('calendar', 'en') }}>
+  <PageHeader title={T.title} subtitle={T.subtitle} />
+
+  <div class="rounded-xl border border-border bg-surface p-3" data-calendar data-default-lang={lang}>
+    <div class="flex justify-end mb-2">
+      <div class="flex rounded-md border border-border text-xs overflow-hidden" role="group" aria-label={T.widgetLang}>
+        <button type="button" data-calendar-lang="pt" lang="pt-BR" aria-pressed="false" class="px-3 py-1 text-muted hover:text-text aria-pressed:bg-surface-2 aria-pressed:text-text aria-pressed:font-semibold">Português</button>
+        <button type="button" data-calendar-lang="en" lang="en-US" aria-pressed="false" class="px-3 py-1 border-l border-border text-muted hover:text-text aria-pressed:bg-surface-2 aria-pressed:text-text aria-pressed:font-semibold">English</button>
+      </div>
+    </div>
+    <!-- A altura fica no elemento de fora: o script do TradingView força height:100% no contêiner.
+         color-scheme normal: ver TradingViewWidget.astro (fundo branco atrás do iframe). -->
+    <div style="height:620px">
+      <div style="color-scheme: normal" class="tradingview-widget-container h-full" data-calendar-widget>
+        <p class="h-full grid place-items-center text-sm text-muted">{T.loading}</p>
+      </div>
+    </div>
+    <p class="text-xs text-muted mt-2">
+      <a href="https://br.tradingview.com/economic-calendar/" rel="noopener nofollow" target="_blank" class="hover:text-text" data-calendar-credit>Calendário econômico por TradingView</a>
+    </p>
+  </div>
+  <p class="text-xs text-muted mt-2">{T.tip}</p>
+
+  {lang === 'pt' ? (
+    <section class="mt-10" aria-labelledby="guia">
+      <h2 id="guia" class="text-2xl font-semibold">Os eventos que mais movem o mercado</h2>
+      <p class="text-muted mt-1 mb-6 max-w-3xl">
+        Em dias com esses eventos, o preço pode se mover muito em poucos segundos e a diferença entre compra e venda (spread) aumenta. Muitos
+        traders evitam abrir posições minutos antes da divulgação.
+      </p>
+      <div class="grid gap-4 md:grid-cols-2">
+        {EVENTOS.map((e) => (
+          <article id={e.id} class="rounded-xl border border-border bg-surface p-5 scroll-mt-20">
+            <div class="flex items-start justify-between gap-2">
+              <h3 class="font-semibold">{e.nome}</h3>
+              <span class="text-xs rounded-full border border-border px-2 py-0.5 text-muted shrink-0">{e.pais}</span>
+            </div>
+            <p class="text-xs text-muted mt-1">{e.frequencia} · {e.horario}</p>
+            <p class="text-sm mt-3"><strong>O que é:</strong> {e.oQueE}</p>
+            <p class="text-sm mt-2"><strong>Por que importa:</strong> {e.porQueImporta}</p>
+            <p class="text-xs text-muted mt-3">Mais afetados: {e.afeta.join(' · ')}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  ) : (
+    <section class="mt-10 rounded-xl border border-border bg-surface p-5 max-w-3xl" aria-labelledby="guide">
+      <h2 id="guide" class="text-xl font-semibold">The events that move markets the most</h2>
+      <p class="text-sm text-text/90 mt-2 leading-relaxed">
+        On release days for Non-Farm Payrolls, CPI, FOMC decisions, PCE, GDP, PMIs, jobless claims, ECB decisions and Brazil's Copom,
+        prices can move sharply within seconds and spreads widen. Many traders avoid opening positions minutes before the release.
+      </p>
+      <p class="text-sm mt-3">
+        A beginner's guide to each of these {EVENTOS.length} events is <a href={`${route('calendar', 'pt')}#guia`} hreflang="pt-BR" class="text-accent">available in Portuguese</a>; the English version is coming soon.
+      </p>
+    </section>
+  )}
+</Layout>
+
+<script>
+  import { pageLang } from '../i18n';
+
+  const WIDGET_SRC = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+  const CONFIG = {
+    colorTheme: 'dark',
+    isTransparent: true,
+    width: '100%',
+    height: '100%',
+    importanceFilter: '-1,0,1',
+    countryFilter: 'us,eu,gb,jp,cn,br',
+  };
+  const CREDIT = {
+    pt: { href: 'https://br.tradingview.com/economic-calendar/', label: 'Calendário econômico por TradingView' },
+    en: { href: 'https://www.tradingview.com/economic-calendar/', label: 'Economic calendar by TradingView' },
+  };
+  type WidgetLang = keyof typeof CREDIT;
+
+  const root = document.querySelector<HTMLElement>('[data-calendar]');
+
+  if (root) {
+    const box = root.querySelector<HTMLElement>('[data-calendar-widget]')!;
+    const credit = root.querySelector<HTMLAnchorElement>('[data-calendar-credit]')!;
+    // Escolha lembrada por versão da página: /calendario abre em português e
+    // /en/calendar em inglês até o visitante trocar.
+    const STORE_KEY = `easytrader:calendar-lang:${pageLang()}`;
+    const isLang = (v: unknown): v is WidgetLang => v === 'pt' || v === 'en';
+
+    let current: WidgetLang = isLang(root.dataset.defaultLang) ? root.dataset.defaultLang : 'pt';
+    try {
+      const saved = localStorage.getItem(STORE_KEY);
+      if (isLang(saved)) current = saved;
+    } catch {
+      // Sem localStorage: usa o padrão da página.
+    }
+
+    /** Recria só o widget, com o script do TradingView no idioma escolhido. */
+    function mount(l: WidgetLang) {
+      current = l;
+      root!.querySelectorAll<HTMLElement>('[data-calendar-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.calendarLang === l)));
+      credit.href = CREDIT[l].href;
+      credit.textContent = CREDIT[l].label;
+
+      box.replaceChildren();
+      const target = document.createElement('div');
+      target.className = 'tradingview-widget-container__widget h-full';
+      const script = document.createElement('script');
+      script.src = WIDGET_SRC;
+      script.async = true;
+      script.textContent = JSON.stringify({ ...CONFIG, locale: l === 'en' ? 'en' : 'br' });
+      box.append(target, script);
+    }
+
+    root.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-calendar-lang]');
+      const l = btn?.dataset.calendarLang;
+      if (!isLang(l) || l === current) return;
+      try {
+        localStorage.setItem(STORE_KEY, l);
+      } catch {
+        // Ignora: a escolha só não fica salva.
+      }
+      mount(l);
+    });
+
+    mount(current);
+  }
+</script>

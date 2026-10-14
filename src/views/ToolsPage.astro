@@ -1,0 +1,86 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import PositionCalculator from '../components/PositionCalculator.astro';
+import CurrencyConverter from '../components/CurrencyConverter.astro';
+import PipCalculator from '../components/PipCalculator.astro';
+import { ROUTES, route, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+const T = {
+  pt: {
+    title: 'Ferramentas',
+    description: 'Calculadora de tamanho de posição e risco-retorno, conversor de moedas e cripto e calculadora de pip para forex.',
+    subtitle: 'Calculadoras para planejar cada operação antes de entrar.',
+    nav: 'Ferramentas desta página',
+    chips: ['Tamanho de posição', 'Conversor', 'Pip (forex)'],
+    cards: [
+      {
+        title: 'Como o cálculo funciona',
+        html: '<strong class="text-text">Valor em risco</strong> = capital × risco%.<br /><strong class="text-text">Tamanho</strong> = valor em risco ÷ |entrada − stop|.<br />Com R$ 10.000, risco de 1%, entrada 100 e stop 95: arrisca R$ 100, que ÷ 5 = 20 unidades.',
+      },
+      {
+        title: 'Risco-retorno',
+        html: 'Compara o ganho até o alvo com a perda até o stop. Com 1:2, um acerto paga duas perdas, e basta acertar mais de 33% das vezes para não perder dinheiro (antes de custos).',
+      },
+      {
+        title: 'Por que limitar o risco',
+        html: `Arriscando 1% por operação, dez perdas seguidas custam cerca de 10% da conta; arriscando 10%, custam mais de 65%. Veja também <a href="${ROUTES.glossary.pt}#stop-loss" class="text-accent">stop loss</a>.`,
+      },
+    ],
+  },
+  en: {
+    title: 'Tools',
+    description: 'Position size and risk/reward calculator, currency and crypto converter, and forex pip calculator.',
+    subtitle: 'Calculators to plan every trade before you enter.',
+    nav: 'Tools on this page',
+    chips: ['Position size', 'Converter', 'Pip (forex)'],
+    cards: [
+      {
+        title: 'How the math works',
+        html: '<strong class="text-text">Amount at risk</strong> = account × risk%.<br /><strong class="text-text">Size</strong> = amount at risk ÷ |entry − stop|.<br />With $10,000, 1% risk, entry 100 and stop 95: you risk $100, and 100 ÷ 5 = 20 units.',
+      },
+      {
+        title: 'Risk/reward',
+        html: 'Compares the gain to the target with the loss to the stop. At 1:2, one win pays for two losses, and you only need to be right more than 33% of the time to break even (before costs).',
+      },
+      {
+        title: 'Why cap your risk',
+        html: 'Risking 1% per trade, ten losses in a row cost about 10% of the account; risking 10%, they cost more than 65%.',
+      },
+    ],
+  },
+}[lang];
+const anchors = ['#posicao', '#conversor', '#pip'];
+---
+
+<Layout title={T.title} description={T.description} alternates={{ pt: route('tools', 'pt'), en: route('tools', 'en') }}>
+  <PageHeader title={T.title} subtitle={T.subtitle} />
+
+  <nav aria-label={T.nav} class="flex flex-wrap gap-2 -mt-4 mb-6 text-sm">
+    {T.chips.map((label, i) => (
+      <a href={anchors[i]} class="rounded-full border border-border px-3 py-1 hover:text-accent hover:border-accent">{label}</a>
+    ))}
+  </nav>
+
+  <PositionCalculator />
+
+  <section class="grid gap-4 md:grid-cols-3 mt-6">
+    {T.cards.map((c) => (
+      <div class="rounded-xl border border-border bg-surface p-5">
+        <h3 class="font-semibold">{c.title}</h3>
+        <p class="text-sm text-muted mt-2 leading-relaxed" set:html={c.html} />
+      </div>
+    ))}
+  </section>
+
+  <div class="grid gap-6 lg:grid-cols-2 mt-6 items-start">
+    <CurrencyConverter />
+    <PipCalculator />
+  </div>
+</Layout>

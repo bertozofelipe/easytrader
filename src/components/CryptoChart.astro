@@ -1,6 +1,7 @@
 ---
 // Gráfico de candles com volume e indicadores (Lightweight Charts), alimentado
 // pela API pública de dados de mercado da Binance, direto do navegador.
+import { guidePath, langFromPath } from '../i18n';
 import { INDICATOR_TOGGLES } from '../lib/indicator-toggles';
 
 interface Props {
@@ -8,46 +9,61 @@ interface Props {
 }
 
 const { pair } = Astro.props;
+const lang = langFromPath(Astro.url.pathname);
+
+const T = {
+  pt: { timeframe: 'Tempo gráfico', tz: 'horário de Brasília', indicators: 'Indicadores', whatIs: (l: string) => `O que é ${l}?`, week: '1S', loading: 'Carregando gráfico…' },
+  en: { timeframe: 'Timeframe', tz: 'Brasília time (UTC−3)', indicators: 'Indicators', whatIs: (l: string) => `What is ${l}? (guide in Portuguese)`, week: '1W', loading: 'Loading chart…' },
+}[lang];
 
 const INTERVALS = [
   { id: '1h', label: '1H' },
   { id: '4h', label: '4H' },
   { id: '1d', label: '1D' },
-  { id: '1w', label: '1S' },
+  { id: '1w', label: T.week },
 ];
+// "MM" (média móvel) vira "MA" em inglês.
+const toggleLabel = (label: string) => (lang === 'en' ? label.replace(/^MM /, 'MA ') : label);
 ---
 
 <div class="rounded-xl border border-border bg-surface p-3" data-crypto-chart data-pair={pair}>
   <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-    <div class="flex gap-1" role="group" aria-label="Tempo gráfico">
+    <div class="flex gap-1" role="group" aria-label={T.timeframe}>
       {INTERVALS.map((i) => (
         <button type="button" data-interval={i.id} class="px-2.5 py-1 rounded-md text-xs text-muted hover:text-text aria-pressed:bg-surface-2 aria-pressed:text-text" aria-pressed={i.id === '1d' ? 'true' : 'false'}>
           {i.label}
         </button>
       ))}
     </div>
-    <span class="text-xs text-muted">{pair} · Binance · horário de Brasília</span>
+    <span class="text-xs text-muted">{pair} · Binance · {T.tz}</span>
   </div>
 
-  <div class="flex flex-wrap items-center gap-1.5 mb-2" role="group" aria-label="Indicadores">
+  <div class="flex flex-wrap items-center gap-1.5 mb-2" role="group" aria-label={T.indicators}>
     {INDICATOR_TOGGLES.map((t) => (
       <span class="inline-flex items-center rounded-md border border-border text-xs overflow-hidden">
         <button type="button" data-indicator={t.id} aria-pressed="false" class="flex items-center gap-1.5 px-2 py-1 text-muted hover:text-text aria-pressed:bg-surface-2 aria-pressed:text-text">
-          <span class="w-2.5 h-0.5 rounded" style={`background:${t.color}`}></span>{t.label}
+          <span class="w-2.5 h-0.5 rounded" style={`background:${t.color}`}></span>{toggleLabel(t.label)}
         </button>
-        <a href={`/indicadores/${t.guide}`} class="px-1.5 py-1 border-l border-border text-muted hover:text-accent" title={`O que é ${t.label}?`} aria-label={`O que é ${t.label}?`}>?</a>
+        <a href={guidePath(t.guide)} class="px-1.5 py-1 border-l border-border text-muted hover:text-accent" title={T.whatIs(toggleLabel(t.label))} aria-label={T.whatIs(toggleLabel(t.label))}>?</a>
       </span>
     ))}
   </div>
 
   <div class="h-[440px] relative transition-[height]" data-chart-el>
-    <p class="absolute inset-0 grid place-items-center text-sm text-muted z-10" data-chart-msg>Carregando gráfico…</p>
+    <p class="absolute inset-0 grid place-items-center text-sm text-muted z-10" data-chart-msg>{T.loading}</p>
   </div>
 </div>
 
 <script>
   import { CandlestickSeries, ColorType, HistogramSeries, createChart, type UTCTimestamp } from 'lightweight-charts';
   import { DEFAULT_INDICATORS, INDICATOR_TOGGLES, drawIndicators, type Candle, type IndicatorId } from '../lib/chart-indicators';
+  import { LOCALE, pageLang } from '../i18n';
+
+  const lang = pageLang();
+  const MSG = {
+    pt: { loading: 'Carregando gráfico…', error: 'Não foi possível carregar o gráfico agora.' },
+    en: { loading: 'Loading chart…', error: 'Could not load the chart right now.' },
+  }[lang];
 
   const LIMITS: Record<string, number> = { '1h': 500, '4h': 500, '1d': 500, '1w': 300 };
   const BRT_OFFSET = -3 * 3600; // Brasil sem horário de verão desde 2019.
@@ -81,7 +97,7 @@ const INTERVALS = [
       grid: { vertLines: { color: css('--color-border') + '55' }, horzLines: { color: css('--color-border') + '55' } },
       rightPriceScale: { borderColor: css('--color-border') },
       timeScale: { borderColor: css('--color-border'), timeVisible: true },
-      localization: { locale: 'pt-BR' },
+      localization: { locale: LOCALE[lang] },
     });
     const candleSeries = chart.addSeries(CandlestickSeries, { upColor: up, downColor: down, wickUpColor: up, wickDownColor: down, borderVisible: false });
     const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' }, priceScaleId: '', lastValueVisible: false, priceLineVisible: false });
@@ -107,7 +123,7 @@ const INTERVALS = [
 
     async function load(interval: string) {
       msg.hidden = false;
-      msg.textContent = 'Carregando gráfico…';
+      msg.textContent = MSG.loading;
       try {
         const res = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${pair}&interval=${interval}&limit=${LIMITS[interval]}`);
         if (!res.ok) throw new Error(String(res.status));
@@ -128,7 +144,7 @@ const INTERVALS = [
         chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, candles.length - 150), to: candles.length + 3 });
         msg.hidden = true;
       } catch {
-        msg.textContent = 'Não foi possível carregar o gráfico agora.';
+        msg.textContent = MSG.error;
       }
     }
 

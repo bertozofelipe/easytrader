@@ -4,19 +4,27 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Ticker from '../components/Ticker.astro';
 import { SITE } from '../config';
+import { langFromPath, LOCALE, OG_LOCALE, type Lang } from '../i18n';
+import { t } from '../i18n/ui';
 
 interface Props {
   title?: string;
   description?: string;
+  /** Caminho desta página em cada idioma (hreflang e seletor de idioma). */
+  alternates?: Partial<Record<Lang, string>>;
 }
 
-const { title, description = SITE.description } = Astro.props;
-const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} — o dia a dia do trader em um só lugar`;
+const lang = langFromPath(Astro.url.pathname);
+const s = t(lang);
+const { title, description = s.site.description, alternates = {} } = Astro.props;
+const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} — ${s.site.tagline}`;
+const abs = (path: string) => (Astro.site ? new URL(path, Astro.site).href : path);
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefined;
+const alt = Object.entries(alternates) as [Lang, string][];
 ---
 
 <!doctype html>
-<html lang={SITE.locale}>
+<html lang={LOCALE[lang]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -26,14 +34,17 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefin
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {canonical && <link rel="canonical" href={canonical} />}
+    {alt.length > 1 && alt.map(([l, path]) => <link rel="alternate" hreflang={LOCALE[l]} href={abs(path)} />)}
+    {alt.length > 1 && alternates.pt && <link rel="alternate" hreflang="x-default" href={abs(alternates.pt)} />}
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:locale" content={OG_LOCALE[lang]} />
+    {alt.filter(([l]) => l !== lang).map(([l]) => <meta property="og:locale:alternate" content={OG_LOCALE[l]} />)}
     <link rel="sitemap" href="/sitemap-index.xml" />
   </head>
   <body class="min-h-screen flex flex-col">
-    <Header />
+    <Header alternates={alternates} />
     <Ticker />
     <main class="flex-1 w-full max-w-6xl mx-auto px-4 py-8">
       <slot />

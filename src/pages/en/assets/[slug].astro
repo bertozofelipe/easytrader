@@ -1,0 +1,12 @@
+---
+import AssetPage from '../../../views/AssetPage.astro';
+import { ASSETS, type Asset } from '../../../data/assets';
+
+export function getStaticPaths() {
+  return ASSETS.map((asset) => ({ params: { slug: asset.slug }, props: { asset } }));
+}
+
+const { asset } = Astro.props as { asset: Asset };
+---
+
+<AssetPage asset={asset} lang="en" />

@@ -1,0 +1,122 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import DataStamp from '../components/DataStamp.astro';
+import { ROUTES, route, type Lang } from '../i18n';
+import { loadData, type CryptoData, type SentimentData } from '../lib/market';
+import { renderCryptoKpis, renderCryptoRows, renderFearGreed, renderMovers } from '../lib/render';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const [crypto, sentiment] = await Promise.all([loadData<CryptoData>('crypto'), loadData<SentimentData>('sentiment')]);
+
+const T = {
+  pt: {
+    title: 'Cripto',
+    description: 'Painel do mercado cripto: top 50 moedas, dominância do Bitcoin, índice de medo e ganância e maiores altas e baixas.',
+    subtitle: 'Panorama do mercado cripto em uma tela. Preços em dólar (US$).',
+    kpis: 'Indicadores do mercado',
+    fng: 'Medo e ganância',
+    fngDesc: 'Sentimento do mercado cripto de 0 (medo extremo) a 100 (ganância extrema).',
+    whatIs: 'O que é?',
+    gainers: 'Maiores altas (24h)',
+    losers: 'Maiores baixas (24h)',
+    top: 'Top 50 por valor de mercado',
+    th: ['#', 'Moeda', 'Preço', '1h', '24h', '7d', 'Valor de mercado', 'Volume 24h', '7 dias'],
+    loading: 'Carregando…',
+  },
+  en: {
+    title: 'Crypto',
+    description: 'Crypto market dashboard: top 50 coins, Bitcoin dominance, Fear & Greed index and biggest gainers and losers.',
+    subtitle: 'The crypto market at a glance. Prices in US dollars ($).',
+    kpis: 'Market stats',
+    fng: 'Fear & Greed',
+    fngDesc: 'Crypto market sentiment from 0 (extreme fear) to 100 (extreme greed).',
+    whatIs: 'What is it? (PT)',
+    gainers: 'Top gainers (24h)',
+    losers: 'Top losers (24h)',
+    top: 'Top 50 by market cap',
+    th: ['#', 'Coin', 'Price', '1h', '24h', '7d', 'Market cap', '24h volume', '7 days'],
+    loading: 'Loading…',
+  },
+}[lang];
+const th = T.th;
+---
+
+<Layout title={T.title} description={T.description} alternates={{ pt: route('crypto', 'pt'), en: route('crypto', 'en') }}>
+  <PageHeader title={T.title} subtitle={T.subtitle} />
+
+  <section class="grid gap-4 grid-cols-2 lg:grid-cols-4" data-crypto-kpis aria-label={T.kpis}>
+    {crypto && <Fragment set:html={renderCryptoKpis(crypto, lang)} />}
+  </section>
+
+  <div class="grid gap-4 lg:grid-cols-3 mt-4">
+    <section class="rounded-xl border border-border bg-surface p-5">
+      <h2 class="font-semibold mb-1">{T.fng}</h2>
+      <p class="text-xs text-muted mb-4">
+        {T.fngDesc}
+        <a href={`${ROUTES.glossary.pt}#fear-and-greed`} class="text-accent">{T.whatIs}</a>
+      </p>
+      <div data-fng>{sentiment && <Fragment set:html={renderFearGreed(sentiment, lang)} />}</div>
+    </section>
+    <section class="rounded-xl border border-border bg-surface p-5">
+      <h2 class="font-semibold mb-2">{T.gainers}</h2>
+      <ul class="text-sm" data-movers-up>{crypto && <Fragment set:html={renderMovers(crypto.coins, 'up', lang)} />}</ul>
+    </section>
+    <section class="rounded-xl border border-border bg-surface p-5">
+      <h2 class="font-semibold mb-2">{T.losers}</h2>
+      <ul class="text-sm" data-movers-down>{crypto && <Fragment set:html={renderMovers(crypto.coins, 'down', lang)} />}</ul>
+    </section>
+  </div>
+
+  <section class="mt-8">
+    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+      <h2 class="text-xl font-semibold">{T.top}</h2>
+      <DataStamp name="crypto" updatedAt={crypto?.updatedAt} source="CoinGecko" />
+    </div>
+    <div class="overflow-x-auto rounded-xl border border-border bg-surface px-4">
+      <table class="w-full text-sm">
+        <thead class="text-xs text-muted">
+          <tr>
+            <th class="py-3 pr-2 text-left font-medium">{th[0]}</th>
+            <th class="py-3 pr-4 text-left font-medium">{th[1]}</th>
+            <th class="py-3 px-2 text-right font-medium">{th[2]}</th>
+            <th class="py-3 px-2 text-right font-medium hidden md:table-cell">{th[3]}</th>
+            <th class="py-3 px-2 text-right font-medium">{th[4]}</th>
+            <th class="py-3 px-2 text-right font-medium hidden sm:table-cell">{th[5]}</th>
+            <th class="py-3 px-2 text-right font-medium hidden lg:table-cell">{th[6]}</th>
+            <th class="py-3 px-2 text-right font-medium hidden lg:table-cell">{th[7]}</th>
+            <th class="py-3 pl-2 text-left font-medium hidden md:table-cell">{th[8]}</th>
+          </tr>
+        </thead>
+        <tbody data-crypto-rows>
+          {crypto ? <Fragment set:html={renderCryptoRows(crypto.coins, lang)} /> : <tr><td colspan="9" class="py-6 text-center text-muted">{T.loading}</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  import { pageLang } from '../i18n';
+  import { fetchLatest, type CryptoData, type SentimentData } from '../lib/market';
+  import { renderCryptoKpis, renderCryptoRows, renderFearGreed, renderMovers } from '../lib/render';
+  import { every, REFRESH_MS, setHtml, setStamp } from '../lib/live';
+
+  const lang = pageLang();
+
+  every(REFRESH_MS, async () => {
+    const [crypto, sentiment] = await Promise.all([fetchLatest<CryptoData>('crypto'), fetchLatest<SentimentData>('sentiment')]);
+    if (crypto) {
+      setHtml('[data-crypto-kpis]', renderCryptoKpis(crypto, lang));
+      setHtml('[data-crypto-rows]', renderCryptoRows(crypto.coins, lang));
+      setHtml('[data-movers-up]', renderMovers(crypto.coins, 'up', lang));
+      setHtml('[data-movers-down]', renderMovers(crypto.coins, 'down', lang));
+      setStamp('crypto', crypto.updatedAt);
+    }
+    if (sentiment) setHtml('[data-fng]', renderFearGreed(sentiment, lang));
+  });
+</script>

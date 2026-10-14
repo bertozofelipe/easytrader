@@ -1,0 +1,150 @@
+---
+import Layout from '../layouts/Layout.astro';
+import WatchlistBox from '../components/WatchlistBox.astro';
+import { route, ROUTES, type Lang } from '../i18n';
+import { loadData, type NewsData, type SentimentData, type TickerData } from '../lib/market';
+import { pickHomeNews, renderFearGreedMini, renderMarketOverview, renderNewsItems } from '../lib/render';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+const [ticker, news, sentiment] = await Promise.all([
+  loadData<TickerData>('ticker'),
+  loadData<NewsData>('news'),
+  loadData<SentimentData>('sentiment'),
+]);
+
+const T = {
+  pt: {
+    kicker: 'Mercado global e cripto',
+    title: 'O dia a dia do trader em um só lugar.',
+    lead: 'Notícias, calendário econômico, análise de ativos e uma escola para quem está começando. Em português e gratuito.',
+    latest: 'Últimas notícias',
+    seeAll: 'Ver todas',
+    market: 'Mercado agora',
+    assets: 'Ativos',
+    fng: 'Medo e ganância (cripto)',
+    dashboard: 'Painel',
+    agenda: 'Agenda do dia',
+    agendaDesc: 'Confira os eventos econômicos de hoje antes de operar.',
+    explore: 'Explore',
+    loading: 'Carregando…',
+    sections: [
+      { href: route('news', 'pt'), title: 'Notícias', desc: 'O que move o mercado hoje: macro, ações, forex, commodities e cripto.' },
+      { href: route('calendar', 'pt'), title: 'Calendário econômico', desc: 'Payroll, CPI, juros e outros eventos com horário de Brasília e nível de impacto.' },
+      { href: route('assets', 'pt'), title: 'Ativos', desc: 'Gráficos, variação, termômetro técnico e dados do dia de índices, ações, moedas e cripto.' },
+      { href: route('crypto', 'pt'), title: 'Cripto', desc: 'Top moedas, dominância do BTC e índice de medo e ganância.' },
+      { href: ROUTES.indicators.pt, title: 'Indicadores técnicos', desc: 'RSI, MACD, médias móveis, Bollinger e outros, explicados de forma simples.' },
+      { href: ROUTES.school.pt, title: 'Escola', desc: 'Do zero ao primeiro trade: fundamentos, análise técnica, gestão de risco e psicologia.' },
+      { href: route('tools', 'pt'), title: 'Ferramentas', desc: 'Tamanho de posição e risco-retorno, conversor de moedas e cripto, valor do pip.' },
+      { href: ROUTES.glossary.pt, title: 'Glossário', desc: 'Os termos do mercado traduzidos para o português claro.' },
+    ],
+  },
+  en: {
+    kicker: 'Global markets and crypto',
+    title: "The trader's day, all in one place.",
+    lead: 'News, economic calendar, asset analysis, a technical gauge for every asset and trading calculators. Free.',
+    latest: 'Latest news',
+    seeAll: 'See all',
+    market: 'Market now',
+    assets: 'Assets',
+    fng: 'Fear & Greed (crypto)',
+    dashboard: 'Dashboard',
+    agenda: "Today's calendar",
+    agendaDesc: "Check today's economic events before you trade.",
+    explore: 'Explore',
+    loading: 'Loading…',
+    sections: [
+      { href: route('news', 'en'), title: 'News', desc: 'What moves the market today: macro, stocks, forex, commodities and crypto.' },
+      { href: route('calendar', 'en'), title: 'Economic calendar', desc: 'Payrolls, CPI, rate decisions and more, with impact level.' },
+      { href: route('assets', 'en'), title: 'Assets', desc: 'Charts, daily stats and a technical gauge for indices, stocks, FX and crypto.' },
+      { href: route('crypto', 'en'), title: 'Crypto', desc: 'Top coins, BTC dominance and the Fear & Greed index.' },
+      { href: route('tools', 'en'), title: 'Tools', desc: 'Position size and risk/reward, currency and crypto converter, pip value.' },
+      { href: `${route('tools', 'en')}#pip`, title: 'Pip calculator', desc: 'Pip value for 14 FX pairs in your account currency.' },
+    ],
+  },
+}[lang];
+---
+
+<Layout alternates={{ pt: route('home', 'pt'), en: route('home', 'en') }}>
+  <section class="py-6 md:py-10">
+    <p class="text-sm uppercase tracking-wider text-accent mb-2">{T.kicker}</p>
+    <h1 class="text-3xl md:text-4xl font-bold tracking-tight max-w-3xl">{T.title}</h1>
+    <p class="text-muted mt-3 max-w-2xl">{T.lead}</p>
+  </section>
+
+  <div class="grid gap-4 lg:grid-cols-3">
+    <section class="lg:col-span-2 rounded-xl border border-border bg-surface px-5 py-4" aria-labelledby="ultimas">
+      <div class="flex items-baseline justify-between">
+        <h2 id="ultimas" class="font-semibold">{T.latest}</h2>
+        <a href={route('news', lang)} class="text-sm text-accent">{T.seeAll}</a>
+      </div>
+      <ul class="mt-1" data-home-news>
+        {news ? <Fragment set:html={renderNewsItems(pickHomeNews(news.items, lang), lang, { compact: true })} /> : <li class="py-4 text-muted">{T.loading}</li>}
+      </ul>
+    </section>
+
+    <div class="flex flex-col gap-4">
+      <WatchlistBox hideEmpty />
+      <section class="rounded-xl border border-border bg-surface px-5 py-4" aria-labelledby="mercado">
+        <div class="flex items-baseline justify-between">
+          <h2 id="mercado" class="font-semibold">{T.market}</h2>
+          <a href={route('assets', lang)} class="text-sm text-accent">{T.assets}</a>
+        </div>
+        <ul class="mt-2 text-sm" data-home-market>
+          {ticker && <Fragment set:html={renderMarketOverview(ticker.items, lang)} />}
+        </ul>
+      </section>
+
+      <section class="rounded-xl border border-border bg-surface px-5 py-4" aria-labelledby="sentimento">
+        <div class="flex items-baseline justify-between">
+          <h2 id="sentimento" class="font-semibold">{T.fng}</h2>
+          <a href={route('crypto', lang)} class="text-sm text-accent">{T.dashboard}</a>
+        </div>
+        <p class="mt-2 flex items-baseline gap-3" data-home-fng>
+          {sentiment && <Fragment set:html={renderFearGreedMini(sentiment, lang)} />}
+        </p>
+      </section>
+
+      <a href={route('calendar', lang)} class="group rounded-xl border border-border bg-surface px-5 py-4 hover:border-accent/60 transition-colors">
+        <h2 class="font-semibold group-hover:text-accent">{T.agenda}</h2>
+        <p class="text-sm text-muted mt-1">{T.agendaDesc}</p>
+      </a>
+    </div>
+  </div>
+
+  <section aria-labelledby="secoes" class="mt-10">
+    <h2 id="secoes" class="text-xl font-semibold mb-4">{T.explore}</h2>
+    <div class:list={['grid gap-4 sm:grid-cols-2', T.sections.length % 4 === 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3']}>
+      {T.sections.map((s) => (
+        <a href={s.href} class="group rounded-xl border border-border bg-surface p-5 hover:border-accent/60 transition-colors">
+          <h3 class="font-semibold group-hover:text-accent">{s.title}</h3>
+          <p class="text-sm text-muted mt-1">{s.desc}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<script>
+  import { pageLang } from '../i18n';
+  import { fetchLatest, type NewsData, type SentimentData, type TickerData } from '../lib/market';
+  import { pickHomeNews, renderFearGreedMini, renderMarketOverview, renderNewsItems } from '../lib/render';
+  import { every, REFRESH_MS, setHtml } from '../lib/live';
+
+  const lang = pageLang();
+
+  every(REFRESH_MS, async () => {
+    const [ticker, news, sentiment] = await Promise.all([
+      fetchLatest<TickerData>('ticker'),
+      fetchLatest<NewsData>('news'),
+      fetchLatest<SentimentData>('sentiment'),
+    ]);
+    if (news) setHtml('[data-home-news]', renderNewsItems(pickHomeNews(news.items, lang), lang, { now: Date.now(), compact: true }));
+    if (ticker) setHtml('[data-home-market]', renderMarketOverview(ticker.items, lang));
+    if (sentiment) setHtml('[data-home-fng]', renderFearGreedMini(sentiment, lang));
+  });
+</script>

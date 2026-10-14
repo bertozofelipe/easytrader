@@ -1,94 +1,12 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import DataStamp from '../../components/DataStamp.astro';
-import CryptoChart from '../../components/CryptoChart.astro';
-import TechnicalGauge from '../../components/TechnicalGauge.astro';
-import TradingViewChart from '../../components/TradingViewChart.astro';
-import { ASSETS, datasetFor, kindLabel, type Asset } from '../../data/assets';
-import { loadDatasets } from '../../lib/market';
-import { renderAssetQuote, watchButton } from '../../lib/render';
+import AssetPage from '../../views/AssetPage.astro';
+import { ASSETS, type Asset } from '../../data/assets';
 
 export function getStaticPaths() {
   return ASSETS.map((asset) => ({ params: { slug: asset.slug }, props: { asset } }));
 }
 
 const { asset } = Astro.props as { asset: Asset };
-
-const dataset = datasetFor(asset);
-const ds = await loadDatasets([dataset]);
-const updatedAt = ds[dataset]?.updatedAt;
-const source = { crypto: 'CoinGecko', fx: 'BCE (Frankfurter)', us: 'Finnhub', cboe: 'Cboe (15 min de atraso)' }[dataset];
-
-const ABOUT: Record<Asset['kind'], string> = {
-  index: `${asset.symbol} é um ETF (fundo negociado em bolsa) que replica o ${asset.tracks}. O preço mostrado é o do ETF, não os pontos do índice, mas a variação percentual acompanha o índice de perto.`,
-  commodity: `${asset.symbol} é um ETF que acompanha o ${asset.tracks}. O preço mostrado é o do ETF; a variação percentual segue a da commodity, com pequenas diferenças de custo e rolagem.`,
-  stock: `${asset.name} (${asset.symbol}) é negociada nos EUA. As cotações têm atraso e o pregão regular vai das 9h30 às 16h de Nova York.`,
-  fx: `Cotação de referência do Banco Central Europeu, publicada uma vez por dia útil. O gráfico do TradingView mostra o mercado intradiário.`,
-  crypto: `${asset.name} (${asset.symbol}) é negociada 24 horas por dia, 7 dias por semana. A variação mostrada é das últimas 24 horas.`,
-};
-const about = asset.about ?? ABOUT[asset.kind];
 ---
 
-<Layout title={`${asset.name} (${asset.symbol}) — cotação e gráfico`} description={`Cotação, variação e gráfico de ${asset.name} (${asset.symbol}).`}>
-  <nav class="text-sm text-muted mb-4" aria-label="Breadcrumb">
-    <a href="/ativos" class="hover:text-text">Ativos</a>
-    <span class="mx-1">/</span>
-    <span>{kindLabel(asset)}</span>
-  </nav>
-
-  <header class="mb-6">
-    <div class="flex flex-wrap items-center gap-3">
-      <h1 class="text-3xl font-bold tracking-tight">{asset.name}</h1>
-      <span class="text-muted font-mono">{asset.symbol}</span>
-      <span class="text-xs rounded-full border border-border px-2 py-0.5 text-muted">{kindLabel(asset)}</span>
-      <span class="sm:ml-auto"><Fragment set:html={watchButton(asset, { label: true })} /></span>
-    </div>
-    <div class="mt-4" data-asset-quote data-slug={asset.slug}>
-      <Fragment set:html={renderAssetQuote(asset, ds)} />
-    </div>
-    <div class="mt-3"><DataStamp name={dataset} updatedAt={updatedAt} source={source} /></div>
-  </header>
-
-  {asset.binance ? <CryptoChart pair={asset.binance} /> : asset.tv && <TradingViewChart symbol={asset.tv} />}
-  {!asset.binance && (
-    <p class="text-xs text-muted mt-2">
-      Para adicionar indicadores (médias, RSI, MACD…), use o botão <strong>Indicadores</strong> do gráfico.
-      <a href="/indicadores" class="text-accent">Entenda cada um</a>.
-    </p>
-  )}
-
-  <div class="mt-6"><TechnicalGauge asset={asset} /></div>
-
-  <div class="mt-6">
-    <section class="rounded-xl border border-border bg-surface p-5">
-      <h2 class="font-semibold mb-2">Sobre</h2>
-      <p class="text-sm text-text/90 leading-relaxed">{about}</p>
-      <p class="text-xs text-muted mt-3">Informação educacional. Não é recomendação de compra ou venda.</p>
-    </section>
-  </div>
-</Layout>
-
-<script>
-  import { assetBySlug, datasetFor } from '../../data/assets';
-  import { fetchDatasets } from '../../lib/market';
-  import { renderAssetQuote } from '../../lib/render';
-  import { every, REFRESH_MS, setStamp } from '../../lib/live';
-  import { bindWatchButtons } from '../../lib/watchlist';
-
-  bindWatchButtons();
-
-  const box = document.querySelector<HTMLElement>('[data-asset-quote]');
-  const asset = box && assetBySlug(box.dataset.slug!);
-
-  if (box && asset) {
-    const name = datasetFor(asset);
-    every(REFRESH_MS, async () => {
-      const ds = await fetchDatasets([name]);
-      const data = ds[name];
-      if (!data) return;
-      const html = renderAssetQuote(asset, ds);
-      if (html) box.innerHTML = html;
-      setStamp(name, data.updatedAt);
-    });
-  }
-</script>
+<AssetPage asset={asset} lang="pt" />

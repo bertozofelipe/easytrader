@@ -1,0 +1,87 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import DataStamp from '../components/DataStamp.astro';
+import WatchlistBox from '../components/WatchlistBox.astro';
+import { ASSET_GROUPS } from '../data/assets';
+import { route, type Lang } from '../i18n';
+import { t } from '../i18n/ui';
+import { loadData, loadDatasets, type SignalsData } from '../lib/market';
+import { collectRows, renderAssetRows } from '../lib/render';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const s = t(lang);
+const ds = await loadDatasets();
+const signals = await loadData<SignalsData>('signals');
+const rows = collectRows(ds);
+
+const T = {
+  pt: {
+    title: 'Ativos',
+    description: 'Índices, VIX, ações dos EUA, câmbio e criptomoedas com cotação, variação, gráfico e termômetro técnico.',
+    subtitle: 'Escolha um ativo para ver gráfico, dados do dia, termômetro técnico e contexto. Use a estrela para montar a sua lista.',
+    legend:
+      'A etiqueta à direita é o <strong class="text-text">termômetro técnico</strong>: o viés de 19 indicadores no gráfico diário (forte alta, alta, neutro, baixa, forte baixa), calculado com o último fechamento. Não é recomendação de compra ou venda. Detalhes na página de cada ativo.',
+  },
+  en: {
+    title: 'Assets',
+    description: 'Indices, VIX, US stocks, FX and crypto with quotes, change, charts and a technical gauge.',
+    subtitle: 'Pick an asset to see its chart, daily stats, technical gauge and context. Use the star to build your watchlist.',
+    legend:
+      'The tag on the right is the <strong class="text-text">technical gauge</strong>: the bias of 19 indicators on the daily chart (strong bullish, bullish, neutral, bearish, strong bearish), based on the latest close. Not a recommendation to buy or sell. Details on each asset page.',
+  },
+}[lang];
+---
+
+<Layout title={T.title} description={T.description} alternates={{ pt: route('assets', 'pt'), en: route('assets', 'en') }}>
+  <PageHeader title={T.title} subtitle={T.subtitle} />
+
+  <div class="mb-6"><WatchlistBox /></div>
+
+  <div class="grid gap-6 md:grid-cols-2">
+    {ASSET_GROUPS.map((g) => (
+      <section class="rounded-xl border border-border bg-surface p-5" id={g.id}>
+        <h2 class="font-semibold">{s.groups[g.id].title}</h2>
+        <p class="text-xs text-muted mb-2">{s.groups[g.id].note}</p>
+        <table class="w-full text-sm">
+          <thead class="sr-only"><tr><th>{s.table.follow}</th><th>{s.table.asset}</th><th>{s.table.price}</th><th>{s.table.change}</th><th>{s.table.gauge}</th></tr></thead>
+          <tbody data-asset-group={g.id}>
+            <Fragment set:html={renderAssetRows(rows.filter((r) => g.kinds.includes(r.asset.kind)), lang, { watch: true, signals })} />
+          </tbody>
+        </table>
+      </section>
+    ))}
+  </div>
+
+  <p class="text-xs text-muted mt-4" set:html={T.legend} />
+
+  <div class="mt-2">
+    <DataStamp name="us" updatedAt={ds.us?.updatedAt} source="Finnhub, Cboe, BCE (Frankfurter), CoinGecko" />
+  </div>
+</Layout>
+
+<script>
+  import { ASSET_GROUPS } from '../data/assets';
+  import { pageLang } from '../i18n';
+  import { fetchDatasets, fetchLatest, type SignalsData } from '../lib/market';
+  import { collectRows, renderAssetRows } from '../lib/render';
+  import { every, REFRESH_MS, setHtml, setStamp } from '../lib/live';
+  import { syncWatchButtons } from '../lib/watchlist';
+
+  const lang = pageLang();
+
+  every(REFRESH_MS, async () => {
+    const [ds, signals] = await Promise.all([fetchDatasets(), fetchLatest<SignalsData>('signals')]);
+    if (!Object.values(ds).some(Boolean)) return;
+    const rows = collectRows(ds);
+    for (const g of ASSET_GROUPS) {
+      setHtml(`[data-asset-group="${g.id}"]`, renderAssetRows(rows.filter((r) => g.kinds.includes(r.asset.kind)), lang, { watch: true, signals }));
+    }
+    syncWatchButtons();
+    if (ds.us) setStamp('us', ds.us.updatedAt);
+  });
+</script>

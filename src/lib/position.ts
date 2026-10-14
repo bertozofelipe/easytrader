@@ -1,4 +1,5 @@
 // Cálculo de tamanho de posição e risco-retorno (sem DOM, para poder testar).
+import type { Lang } from '../i18n';
 
 export interface PositionInput {
   /** Capital da conta. */
@@ -87,20 +88,44 @@ export function calcPosition(i: PositionInput): { ok: true; result: PositionResu
   };
 }
 
-export const POSITION_ERROR_MSG: Record<PositionError, string> = {
-  capital: 'Informe o capital da conta.',
-  risk: 'Informe o risco por operação (entre 0 e 100%).',
-  entry: 'Informe o preço de entrada.',
-  stop: 'Informe o preço do stop.',
-  'same-price': 'O stop precisa ser diferente da entrada.',
-  'target-side': 'O alvo precisa estar do lado oposto ao stop: acima da entrada numa compra, abaixo numa venda.',
+export const POSITION_ERROR_MSG: Record<Lang, Record<PositionError, string>> = {
+  pt: {
+    capital: 'Informe o capital da conta.',
+    risk: 'Informe o risco por operação (entre 0 e 100%).',
+    entry: 'Informe o preço de entrada.',
+    stop: 'Informe o preço do stop.',
+    'same-price': 'O stop precisa ser diferente da entrada.',
+    'target-side': 'O alvo precisa estar do lado oposto ao stop: acima da entrada numa compra, abaixo numa venda.',
+  },
+  en: {
+    capital: 'Enter your account size.',
+    risk: 'Enter the risk per trade (between 0 and 100%).',
+    entry: 'Enter the entry price.',
+    stop: 'Enter the stop price.',
+    'same-price': 'The stop must differ from the entry.',
+    'target-side': 'The target must be on the opposite side of the stop: above the entry for a long, below it for a short.',
+  },
 };
 
-/** Aceita "1.234,56", "1234,56" e "1234.56". */
-export function parseNumber(raw: string): number | null {
+/**
+ * Lê um número digitado, aceitando os dois separadores decimais.
+ * Português: "10.000" e "1.234,56" (ponto em grupos de 3 = milhar), "1234,56" ou "1234.56".
+ * Inglês: "10,000" e "1,234.56" (vírgula em grupos de 3 = milhar), "1234.56" ou "1234,56".
+ */
+export function parseNumber(raw: string, lang: Lang = 'pt'): number | null {
   const s = raw.trim().replace(/\s|R\$|US\$|\$|%/g, '');
   if (!s) return null;
-  const normalized = s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s;
+  const [group, decimal] = lang === 'en' ? [',', '.'] : ['.', ','];
+  const g = group === '.' ? '\\.' : ',';
+  const d = decimal === '.' ? '\\.' : ',';
+  let normalized: string;
+  if (new RegExp(`^-?\\d{1,3}(${g}\\d{3})+(${d}\\d+)?$`).test(s)) {
+    // Separador de milhar do idioma (com ou sem decimais).
+    normalized = s.split(group).join('').replace(decimal, '.');
+  } else {
+    // Sem milhar: vírgula ou ponto, o que houver, é o decimal.
+    normalized = s.replace(',', '.');
+  }
   const n = Number(normalized);
   return Number.isFinite(n) ? n : null;
 }

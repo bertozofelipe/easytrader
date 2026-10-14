@@ -1,8 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { route } from '../i18n';
 ---
 
-<Layout title="Política de privacidade">
+<Layout title="Política de privacidade" alternates={{ pt: route('privacy', 'pt'), en: route('privacy', 'en') }}>
   <article class="prose-et max-w-3xl">
     <h1>Política de privacidade</h1>
     <p class="text-warn">Rascunho — revisar antes do lançamento.</p>

@@ -2,10 +2,15 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Página não encontrada">
+<!-- Uma única 404 para os dois idiomas. -->
+<Layout title="Página não encontrada · Page not found">
   <div class="py-20 text-center">
     <p class="text-6xl font-bold text-accent">404</p>
     <p class="mt-4 text-muted">Essa página não existe (ainda).</p>
-    <a href="/" class="inline-block mt-6 px-4 py-2 rounded-lg border border-border hover:bg-surface-2">Voltar ao início</a>
+    <p class="text-muted" lang="en-US">This page doesn't exist (yet).</p>
+    <div class="mt-6 flex justify-center gap-3">
+      <a href="/" class="px-4 py-2 rounded-lg border border-border hover:bg-surface-2">Voltar ao início</a>
+      <a href="/en/" lang="en-US" class="px-4 py-2 rounded-lg border border-border hover:bg-surface-2">Back to home</a>
+    </div>
   </div>
 </Layout>

@@ -1,7 +1,9 @@
 ---
 // Selo "atualizado em ..." de um dataset. O navegador atualiza o texto via
 // [data-stamp="<nome>"] (ver setStamp em src/lib/live.ts).
-import { formatDateTimeBR } from '../lib/format';
+import { langFromPath } from '../i18n';
+import { t } from '../i18n/ui';
+import { formatDateTime } from '../lib/format';
 
 interface Props {
   name: string;
@@ -11,10 +13,12 @@ interface Props {
 }
 
 const { name, updatedAt, source, note } = Astro.props;
+const lang = langFromPath(Astro.url.pathname);
+const s = t(lang).common;
 ---
 
 <p class="text-xs text-muted">
-  <span data-stamp={name}>{updatedAt ? `Atualizado ${formatDateTimeBR(updatedAt)}` : 'Carregando dados…'}</span>
-  {source && <> · Fonte: {source}</>}
+  <span data-stamp={name}>{updatedAt ? `${s.updated} ${formatDateTime(updatedAt, lang)}` : s.loadingData}</span>
+  {source && <> · {s.source}: {source}</>}
   {note && <> · {note}</>}
 </p>

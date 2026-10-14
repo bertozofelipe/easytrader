@@ -1,0 +1,300 @@
+---
+// Calculadora de tamanho de posição e risco-retorno.
+import { ASSET_GROUPS, ASSETS, assetName } from '../data/assets';
+import { langFromPath } from '../i18n';
+import { t } from '../i18n/ui';
+
+const lang = langFromPath(Astro.url.pathname);
+const groups = t(lang).groups;
+const field = 'w-full rounded-md border border-border bg-bg px-3 py-2 font-mono tabular-nums focus:outline-none focus:border-accent';
+
+const T = {
+  pt: {
+    title: 'Tamanho de posição e risco-retorno',
+    lead: 'Você define quanto aceita perder se o stop for atingido; a calculadora diz o tamanho da posição que respeita esse limite. Funciona para ações, ETFs, cripto e câmbio. Use qualquer moeda, desde que seja a mesma em todos os campos.',
+    capital: 'Capital da conta',
+    risk: 'Risco por operação (%)',
+    useQuote: 'Usar a cotação atual de',
+    optional: '(opcional)',
+    manual: 'Digitar a entrada manualmente',
+    entry: 'Preço de entrada',
+    stop: 'Preço do stop',
+    target: 'Preço-alvo',
+    targetNote: '(opcional, para o risco-retorno)',
+    sideNote: 'Stop abaixo da entrada = compra; stop acima = venda. Aceita vírgula ou ponto como separador decimal.',
+    fill: 'Preencha capital, risco, entrada e stop para ver o resultado.',
+    tradeOf: 'Operação de',
+    size: 'Tamanho da posição',
+    riskAmount: 'Valor em risco',
+    stopDist: 'Distância até o stop',
+    positionValue: 'Valor da posição',
+    exposure: 'Exposição (% do capital)',
+    ratio: 'Risco-retorno',
+    reward: 'Ganho no alvo',
+    targetDist: 'Distância até o alvo',
+    breakEven: 'Acerto mínimo para empatar',
+    disclaimer:
+      'Conta simplificada: não inclui corretagem, taxas, spread nem slippage (o preço de execução pode ser pior que o do stop em mercados rápidos). Ferramenta educacional; não indica onde colocar stop ou alvo e não é recomendação de investimento.',
+  },
+  en: {
+    title: 'Position size and risk/reward',
+    lead: 'You set how much you are willing to lose if the stop is hit; the calculator tells you the position size that respects that limit. Works for stocks, ETFs, crypto and FX. Use any currency, as long as it is the same in every field.',
+    capital: 'Account size',
+    risk: 'Risk per trade (%)',
+    useQuote: 'Use the current price of',
+    optional: '(optional)',
+    manual: 'Type the entry manually',
+    entry: 'Entry price',
+    stop: 'Stop price',
+    target: 'Target price',
+    targetNote: '(optional, for risk/reward)',
+    sideNote: 'Stop below the entry = long; stop above = short.',
+    fill: 'Fill in account size, risk, entry and stop to see the result.',
+    tradeOf: 'Trade:',
+    size: 'Position size',
+    riskAmount: 'Amount at risk',
+    stopDist: 'Distance to stop',
+    positionValue: 'Position value',
+    exposure: 'Exposure (% of account)',
+    ratio: 'Risk/reward',
+    reward: 'Profit at target',
+    targetDist: 'Distance to target',
+    breakEven: 'Break-even win rate',
+    disclaimer:
+      'Simplified math: excludes commissions, fees, spread and slippage (in fast markets the fill can be worse than the stop). Educational tool; it does not tell you where to place a stop or target and is not investment advice.',
+  },
+}[lang];
+---
+
+<section id="posicao" class="scroll-mt-20 rounded-xl border border-border bg-surface p-5" aria-labelledby="calc-titulo" data-position-calc>
+  <h2 id="calc-titulo" class="text-xl font-semibold">{T.title}</h2>
+  <p class="text-sm text-muted mt-1 max-w-2xl">{T.lead}</p>
+
+  <div class="grid gap-6 lg:grid-cols-2 mt-5">
+    <form class="grid gap-4 sm:grid-cols-2 content-start" data-calc-form novalidate>
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.capital}</span>
+        <input name="capital" inputmode="decimal" autocomplete="off" placeholder="10000" class={field} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.risk}</span>
+        <input name="riskPct" inputmode="decimal" autocomplete="off" placeholder="1" value="1" class={field} />
+      </label>
+
+      <label class="flex flex-col gap-1 text-sm sm:col-span-2">
+        <span>{T.useQuote} <span class="text-muted">{T.optional}</span></span>
+        <select name="asset" class={`${field} font-sans`}>
+          <option value="">{T.manual}</option>
+          {ASSET_GROUPS.map((g) => (
+            <optgroup label={groups[g.id].title}>
+              {ASSETS.filter((a) => g.kinds.includes(a.kind)).map((a) => <option value={a.slug}>{assetName(a, lang)} ({a.symbol})</option>)}
+            </optgroup>
+          ))}
+        </select>
+        <span class="text-xs text-muted" data-asset-note></span>
+      </label>
+
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.entry}</span>
+        <input name="entry" inputmode="decimal" autocomplete="off" placeholder="100" class={field} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span>{T.stop}</span>
+        <input name="stop" inputmode="decimal" autocomplete="off" placeholder="95" class={field} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm sm:col-span-2">
+        <span>{T.target} <span class="text-muted">{T.targetNote}</span></span>
+        <input name="target" inputmode="decimal" autocomplete="off" placeholder="110" class={field} />
+      </label>
+      <p class="text-xs text-muted sm:col-span-2">{T.sideNote}</p>
+    </form>
+
+    <div class="rounded-lg bg-surface-2/60 border border-border p-4" aria-live="polite" data-calc-output>
+      <p class="text-sm text-muted" data-calc-msg>{T.fill}</p>
+      <div data-calc-result hidden>
+        <p class="text-xs uppercase tracking-wider text-muted">{T.tradeOf} <span class="text-text font-semibold" data-out="side"></span></p>
+        <p class="mt-2 text-sm text-muted">{T.size}</p>
+        <p class="text-3xl font-bold font-mono tabular-nums" data-out="units"></p>
+        <p class="text-xs text-muted" data-out="unitsNote"></p>
+
+        <dl class="grid grid-cols-2 gap-x-4 gap-y-3 mt-4 text-sm">
+          <div><dt class="text-xs text-muted">{T.riskAmount}</dt><dd class="font-mono tabular-nums text-down" data-out="riskAmount"></dd></div>
+          <div><dt class="text-xs text-muted">{T.stopDist}</dt><dd class="font-mono tabular-nums" data-out="stopDist"></dd></div>
+          <div><dt class="text-xs text-muted">{T.positionValue}</dt><dd class="font-mono tabular-nums" data-out="positionValue"></dd></div>
+          <div><dt class="text-xs text-muted">{T.exposure}</dt><dd class="font-mono tabular-nums" data-out="exposure"></dd></div>
+        </dl>
+        <p class="text-xs text-warn mt-3" data-out="leverageNote" hidden></p>
+
+        <div class="border-t border-border mt-4 pt-4" data-target-block hidden>
+          <dl class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+            <div><dt class="text-xs text-muted">{T.ratio}</dt><dd class="font-mono tabular-nums text-lg font-semibold" data-out="ratio"></dd></div>
+            <div><dt class="text-xs text-muted">{T.reward}</dt><dd class="font-mono tabular-nums text-up" data-out="reward"></dd></div>
+            <div><dt class="text-xs text-muted">{T.targetDist}</dt><dd class="font-mono tabular-nums" data-out="targetDist"></dd></div>
+            <div><dt class="text-xs text-muted">{T.breakEven}</dt><dd class="font-mono tabular-nums" data-out="breakEven"></dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-xs text-muted mt-4">{T.disclaimer}</p>
+</section>
+
+<script>
+  import { assetBySlug, datasetFor } from '../data/assets';
+  import { LOCALE, pageLang } from '../i18n';
+  import { formatPrice, usd } from '../lib/format';
+  import { fetchDatasets } from '../lib/market';
+  import { calcPosition, parseNumber, POSITION_ERROR_MSG } from '../lib/position';
+  import { collectRows } from '../lib/render';
+
+  const lang = pageLang();
+  const S = {
+    pt: {
+      fill: 'Preencha capital, risco, entrada e stop para ver o resultado.',
+      side: { compra: 'compra', venda: 'venda' },
+      units: 'un.',
+      whole: (n: string, risk: string) => `Se o ativo só aceita unidades inteiras: ${n} (risco de ${risk}).`,
+      fraction: 'Menos de 1 unidade: só é possível em ativos fracionáveis, como cripto.',
+      leverage: (x: string) => `A posição é maior que o capital: exigiria alavancagem de ${x}×. Um stop mais distante ou um risco menor reduzem o tamanho.`,
+      fetching: 'Buscando cotação…',
+      unavailable: 'Cotação indisponível agora. Digite a entrada manualmente.',
+      points: 'pontos',
+      quoteOf: (sym: string, v: string) => `Cotação de ${sym} (com atraso): ${v}.`,
+      etf: ' Preço do ETF, não do índice.',
+    },
+    en: {
+      fill: 'Fill in account size, risk, entry and stop to see the result.',
+      side: { compra: 'long (buy)', venda: 'short (sell)' },
+      units: 'units',
+      whole: (n: string, risk: string) => `If the asset only trades in whole units: ${n} (risk of ${risk}).`,
+      fraction: 'Less than 1 unit: only possible with fractional assets, such as crypto.',
+      leverage: (x: string) => `The position is larger than your account: it would need ${x}× leverage. A wider stop or a smaller risk reduces the size.`,
+      fetching: 'Fetching price…',
+      unavailable: 'Price unavailable right now. Type the entry manually.',
+      points: 'points',
+      quoteOf: (sym: string, v: string) => `${sym} price (delayed): ${v}.`,
+      etf: ' ETF price, not the index.',
+    },
+  }[lang];
+
+  const STORE_KEY = 'easytrader:position-calc';
+  const root = document.querySelector<HTMLElement>('[data-position-calc]')!;
+  const form = root.querySelector<HTMLFormElement>('[data-calc-form]')!;
+  const msg = root.querySelector<HTMLElement>('[data-calc-msg]')!;
+  const result = root.querySelector<HTMLElement>('[data-calc-result]')!;
+  const targetBlock = root.querySelector<HTMLElement>('[data-target-block]')!;
+  const assetNote = root.querySelector<HTMLElement>('[data-asset-note]')!;
+  const input = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+  const out = (name: string) => root.querySelector<HTMLElement>(`[data-out="${name}"]`)!;
+  const num = (name: string) => parseNumber(input(name).value, lang);
+
+  const nf = (max: number, min = 0) => new Intl.NumberFormat(LOCALE[lang], { minimumFractionDigits: min, maximumFractionDigits: max });
+  const money = (v: number) => nf(2, 2).format(v);
+  const pct = (v: number) => `${nf(2).format(v)}%`;
+  // Cripto e câmbio aceitam frações pequenas; mostra mais casas quando o número é pequeno.
+  const qty = (v: number) => nf(v >= 1000 ? 0 : v >= 1 ? 4 : 8).format(v);
+  /** Preço com a precisão de quem digitou (até 8 casas). */
+  const price = (v: number) => nf(8).format(v);
+
+  // Lembra capital e risco (preferências pessoais); preços mudam a cada operação.
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) ?? '{}');
+    // Texto digitado: só restaura no mesmo idioma (vírgula e ponto mudam de papel).
+    if ((saved.lang ?? 'pt') === lang) {
+      if (typeof saved.capital === 'string') input('capital').value = saved.capital;
+      if (typeof saved.riskPct === 'string') input('riskPct').value = saved.riskPct;
+    }
+  } catch {
+    // Sem localStorage: usa o padrão.
+  }
+
+  function update() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ capital: input('capital').value, riskPct: input('riskPct').value, lang }));
+    } catch {
+      // Ignora: só não fica salvo.
+    }
+
+    const capital = num('capital');
+    const riskPct = num('riskPct');
+    const entry = num('entry');
+    const stop = num('stop');
+    const target = num('target');
+
+    // Antes de preencher o básico, mostra a instrução em vez de um erro.
+    if ([capital, riskPct, entry, stop].some((v) => v == null)) {
+      msg.textContent = S.fill;
+      msg.className = 'text-sm text-muted';
+      msg.hidden = false;
+      result.hidden = true;
+      return;
+    }
+
+    const calc = calcPosition({ capital: capital!, riskPct: riskPct!, entry: entry!, stop: stop!, target });
+    if (!calc.ok) {
+      msg.textContent = POSITION_ERROR_MSG[lang][calc.error];
+      msg.className = 'text-sm text-warn';
+      msg.hidden = false;
+      result.hidden = true;
+      return;
+    }
+
+    const r = calc.result;
+    msg.hidden = true;
+    result.hidden = false;
+    out('side').textContent = S.side[r.side];
+    out('units').textContent = `${qty(r.units)} ${S.units}`;
+    const whole = Math.floor(r.units);
+    out('unitsNote').textContent =
+      whole >= 1 && whole !== r.units ? S.whole(nf(0).format(whole), money(whole * r.riskPerUnit)) : r.units < 1 ? S.fraction : '';
+    out('riskAmount').textContent = money(r.riskAmount);
+    out('stopDist').textContent = `${price(r.riskPerUnit)} (${pct(r.stopPct)})`;
+    out('positionValue').textContent = money(r.positionValue);
+    out('exposure').textContent = pct(r.exposurePct);
+
+    const lev = out('leverageNote');
+    lev.hidden = r.exposurePct <= 100;
+    lev.textContent = S.leverage(nf(1).format(r.exposurePct / 100));
+
+    targetBlock.hidden = !r.target;
+    if (r.target) {
+      out('ratio').textContent = `1 : ${nf(2).format(r.target.ratio)}`;
+      out('reward').textContent = money(r.target.reward);
+      out('targetDist').textContent = `${price(r.target.rewardPerUnit)} (${pct(r.target.targetPct)})`;
+      out('breakEven').textContent = pct(r.target.breakEvenWinRate);
+    }
+  }
+
+  async function fillFromAsset() {
+    const slug = (form.elements.namedItem('asset') as HTMLSelectElement).value;
+    const asset = slug && assetBySlug(slug);
+    if (!asset) {
+      assetNote.textContent = '';
+      return;
+    }
+    assetNote.textContent = S.fetching;
+    const ds = await fetchDatasets([datasetFor(asset)]);
+    const row = collectRows(ds).find((x) => x.asset.slug === slug);
+    if (row?.price == null) {
+      assetNote.textContent = S.unavailable;
+      return;
+    }
+    // Sem separador de milhar no campo, para o parseNumber ler sem ambiguidade.
+    const value = formatPrice(row.price, asset.kind, lang);
+    input('entry').value = value.replace(lang === 'en' ? /,/g : /\./g, '');
+    const shown = asset.kind === 'fx' ? value : asset.cboe ? `${value} ${S.points}` : `${usd(lang)}${value}`;
+    const etf = !asset.cboe && (asset.kind === 'index' || asset.kind === 'commodity');
+    assetNote.textContent = S.quoteOf(asset.symbol, shown) + (etf ? S.etf : '');
+    update();
+  }
+
+  form.addEventListener('input', (e) => {
+    if ((e.target as HTMLElement).getAttribute('name') !== 'asset') update();
+  });
+  form.addEventListener('change', (e) => {
+    if ((e.target as HTMLElement).getAttribute('name') === 'asset') fillFromAsset();
+  });
+  form.addEventListener('submit', (e) => e.preventDefault());
+  update();
+</script>

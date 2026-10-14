@@ -1,9 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { route } from '../i18n';
 import { SITE } from '../config';
 ---
 
-<Layout title="Sobre">
+<Layout title="Sobre" alternates={{ pt: route('about', 'pt'), en: route('about', 'en') }}>
   <article class="prose-et max-w-3xl">
     <h1>Sobre o Easytrader</h1>
     <p>

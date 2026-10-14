@@ -1,12 +1,14 @@
 ---
 // Widget gratuito "Advanced Chart" do TradingView (com indicadores embutidos).
 import TradingViewWidget from './TradingViewWidget.astro';
+import { langFromPath } from '../i18n';
 
 interface Props {
   symbol: string;
 }
 
 const { symbol } = Astro.props;
+const en = langFromPath(Astro.url.pathname) === 'en';
 ---
 
 <TradingViewWidget
@@ -16,15 +18,19 @@ const { symbol } = Astro.props;
     autosize: true,
     symbol,
     interval: 'D',
-    timezone: 'America/Sao_Paulo',
+    timezone: en ? 'America/New_York' : 'America/Sao_Paulo',
     theme: 'dark',
     style: '1',
-    locale: 'br',
+    locale: en ? 'en' : 'br',
     backgroundColor: '#121826',
     gridColor: 'rgba(36, 48, 73, 0.4)',
     allow_symbol_change: false,
     hide_volume: false,
     support_host: 'https://www.tradingview.com',
   }}
-  attribution={{ href: `https://br.tradingview.com/symbols/${symbol.replace(':', '-')}/`, label: `Gráfico de ${symbol} por TradingView` }}
+  attribution={
+    en
+      ? { href: `https://www.tradingview.com/symbols/${symbol.replace(':', '-')}/`, label: `${symbol} chart by TradingView` }
+      : { href: `https://br.tradingview.com/symbols/${symbol.replace(':', '-')}/`, label: `Gráfico de ${symbol} por TradingView` }
+  }
 />

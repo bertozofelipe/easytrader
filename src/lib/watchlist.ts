@@ -1,5 +1,7 @@
 // Watchlist salva só no navegador (localStorage), sem login.
 import { assetBySlug } from '../data/assets';
+import { pageLang } from '../i18n';
+import { t } from '../i18n/ui';
 
 const STORE_KEY = 'easytrader:watchlist';
 export const WATCHLIST_EVENT = 'easytrader:watchlist';
@@ -60,13 +62,14 @@ export function bindWatchButtons() {
 }
 
 export function syncWatchButtons(list = getWatchlist()) {
+  const w = t(pageLang()).watch;
   document.querySelectorAll<HTMLElement>('[data-watch]').forEach((btn) => {
     const on = list.includes(btn.dataset.watch!);
     btn.setAttribute('aria-pressed', String(on));
     const name = btn.dataset.watchName ?? '';
-    btn.title = on ? `Remover ${name} da sua lista` : `Adicionar ${name} à sua lista`;
+    btn.title = on ? w.remove(name) : w.add(name);
     btn.setAttribute('aria-label', btn.title);
     const label = btn.querySelector('[data-watch-label]');
-    if (label) label.textContent = on ? 'Na sua lista' : 'Acompanhar';
+    if (label) label.textContent = on ? w.following : w.follow;
   });
 }

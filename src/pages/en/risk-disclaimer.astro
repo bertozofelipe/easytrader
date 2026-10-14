@@ -1,0 +1,31 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { route } from '../../i18n';
+---
+
+<Layout title="Risk disclaimer" alternates={{ pt: route('risk', 'pt'), en: route('risk', 'en') }}>
+  <article class="prose-et max-w-3xl">
+    <h1>Risk disclaimer</h1>
+    <p>
+      All Easytrader content — articles, lessons, charts, indicators, the technical gauge, news, calendar and tools — is
+      provided <strong>for educational and informational purposes only</strong>. Nothing here is a recommendation, offer or
+      solicitation to buy or sell any asset, nor investment advice.
+    </p>
+    <h2>Market risks</h2>
+    <ul>
+      <li>Trading stocks, indices, currencies, commodities, derivatives and crypto assets involves <strong>high risk</strong>, including the loss of all your capital.</li>
+      <li>Leveraged products can lead to losses greater than the amount invested.</li>
+      <li>Crypto assets are especially volatile and, in many countries, lightly regulated.</li>
+      <li>Past performance does not guarantee future results.</li>
+    </ul>
+    <h2>Data</h2>
+    <p>
+      Quotes and other data come from free third-party providers, may be <strong>delayed</strong> and may contain errors.
+      Always confirm with your broker or exchange before trading.
+    </p>
+    <h2>Responsibility</h2>
+    <p>
+      Investment decisions are solely the responsibility of each person. If needed, seek a licensed professional.
+    </p>
+  </article>
+</Layout>

@@ -74,12 +74,16 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Página do ativo: mostrador do resumo + médias móveis e osciladores, tabela dos 19 indicadores e "Como é calculado" (substitui a "Leitura dos indicadores" só de cripto)
 - ✅ `/ativos`: etiqueta do viés em cada ativo
 
-## Idiomas (português e inglês) ⬜
+## Idiomas (português e inglês) 🔄 (primeira leva em 14/10/2026)
 
-- ⬜ i18n do Astro: português na raiz, inglês em `/en/`; seletor PT | EN; `hreflang` e sitemap por idioma
-- ⬜ Textos da interface em dicionários; números e datas no formato de cada idioma
-- ⬜ Primeira leva em inglês: interface, ativos, cripto, notícias, calendário, ferramentas, termômetro e páginas legais
-- ⬜ Depois: guias de indicadores, guia de eventos e glossário
+- ✅ Português na raiz, inglês em `/en/` com endereços traduzidos (`/en/news`, `/en/calendar`, `/en/assets`, `/en/crypto`, `/en/tools`…); rotas em `src/i18n/index.ts`
+- ✅ Seletor PT | EN no topo (leva à mesma página no outro idioma); `hreflang`, `og:locale` e `<html lang>` por idioma
+- ✅ Corpo das páginas em `src/views/` (um componente por página, usado pelas duas rotas); textos comuns em `src/i18n/ui.ts`
+- ✅ Números, datas, "US$"/"$" e tempo relativo no formato de cada idioma; calculadoras leem "10.000"/"10,000" conforme o idioma
+- ✅ Em inglês: home, notícias (padrão: só em inglês), calendário, ativos (30 páginas), cripto, ferramentas, termômetro, sobre, aviso de risco, termos e privacidade
+- ✅ Calendário: seletor "Português | English" só do widget, lembrado no navegador; `/calendario` abre em português e `/en/calendar` em inglês
+- ⬜ Traduzir: 8 guias de indicadores, guia de eventos do calendário, glossário (hoje o inglês aponta para a versão em português)
+- ⬜ Sitemap com alternâncias de idioma (o plugin só pareia URLs com o mesmo caminho; os nossos são traduzidos)
 
 ## Etapa 6 — Lançamento ⬜ (~1 semana)
 

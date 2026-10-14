@@ -24,8 +24,5 @@ export function loadFxSnapshot(): Promise<FxSnapshot> {
   return pending;
 }
 
-/** Data da referência do BCE em dd/mm/aaaa. */
-export function fxDate(fx: QuotesData | null): string | null {
-  const iso = fx?.rates?.date ?? fx?.quotes[0]?.asOf;
-  return iso ? iso.split('-').reverse().join('/') : null;
-}
+/** Data da referência do BCE (AAAA-MM-DD). */
+export const fxDate = (fx: QuotesData | null): string | null => fx?.rates?.date ?? fx?.quotes[0]?.asOf ?? null;

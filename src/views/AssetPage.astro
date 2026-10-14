@@ -1,0 +1,127 @@
+---
+import Layout from '../layouts/Layout.astro';
+import DataStamp from '../components/DataStamp.astro';
+import CryptoChart from '../components/CryptoChart.astro';
+import TechnicalGauge from '../components/TechnicalGauge.astro';
+import TradingViewChart from '../components/TradingViewChart.astro';
+import { assetName, datasetFor, type Asset } from '../data/assets';
+import { assetPath, ROUTES, route, type Lang } from '../i18n';
+import { t } from '../i18n/ui';
+import { loadDatasets } from '../lib/market';
+import { kindLabel, renderAssetQuote, watchButton } from '../lib/render';
+
+interface Props {
+  asset: Asset;
+  lang: Lang;
+}
+
+const { asset, lang } = Astro.props;
+const s = t(lang);
+const name = assetName(asset, lang);
+
+const dataset = datasetFor(asset);
+const ds = await loadDatasets([dataset]);
+const updatedAt = ds[dataset]?.updatedAt;
+
+const T = {
+  pt: {
+    title: `${name} (${asset.symbol}) — cotação e gráfico`,
+    description: `Cotação, variação, gráfico e termômetro técnico de ${name} (${asset.symbol}).`,
+    source: { crypto: 'CoinGecko', fx: 'BCE (Frankfurter)', us: 'Finnhub', cboe: 'Cboe (15 min de atraso)' },
+    chartTip: 'Para adicionar indicadores (médias, RSI, MACD…), use o botão <strong>Indicadores</strong> do gráfico.',
+    learn: 'Entenda cada um',
+    about: 'Sobre',
+    text: {
+      index: `${asset.symbol} é um ETF (fundo negociado em bolsa) que replica o ${asset.tracks}. O preço mostrado é o do ETF, não os pontos do índice, mas a variação percentual acompanha o índice de perto.`,
+      commodity: `${asset.symbol} é um ETF que acompanha o ${asset.tracks}. O preço mostrado é o do ETF; a variação percentual segue a da commodity, com pequenas diferenças de custo e rolagem.`,
+      stock: `${name} (${asset.symbol}) é negociada nos EUA. As cotações têm atraso e o pregão regular vai das 9h30 às 16h de Nova York.`,
+      fx: 'Cotação de referência do Banco Central Europeu, publicada uma vez por dia útil. O gráfico do TradingView mostra o mercado intradiário.',
+      crypto: `${name} (${asset.symbol}) é negociada 24 horas por dia, 7 dias por semana. A variação mostrada é das últimas 24 horas.`,
+    },
+    custom: asset.about,
+  },
+  en: {
+    title: `${name} (${asset.symbol}) — price and chart`,
+    description: `Price, change, chart and technical gauge for ${name} (${asset.symbol}).`,
+    source: { crypto: 'CoinGecko', fx: 'ECB (Frankfurter)', us: 'Finnhub', cboe: 'Cboe (15-min delay)' },
+    chartTip: 'To add indicators (moving averages, RSI, MACD…), use the chart\'s <strong>Indicators</strong> button.',
+    learn: 'Learn about each one (in Portuguese)',
+    about: 'About',
+    text: {
+      index: `${asset.symbol} is an ETF (exchange-traded fund) that tracks the ${asset.tracksEn ?? asset.tracks}. The price shown is the ETF's, not the index points, but the percentage change closely follows the index.`,
+      commodity: `${asset.symbol} is an ETF that tracks the ${asset.tracksEn ?? asset.tracks}. The price shown is the ETF's; the percentage change follows the commodity, with small differences due to costs and rolling.`,
+      stock: `${name} (${asset.symbol}) trades in the US. Quotes are delayed and the regular session runs from 9:30 am to 4 pm New York time.`,
+      fx: 'European Central Bank reference rate, published once per business day. The TradingView chart shows the intraday market.',
+      crypto: `${name} (${asset.symbol}) trades 24 hours a day, 7 days a week. The change shown is for the last 24 hours.`,
+    },
+    custom: asset.aboutEn,
+  },
+}[lang];
+const about = T.custom ?? T.text[asset.kind];
+---
+
+<Layout title={T.title} description={T.description} alternates={{ pt: assetPath(asset.slug, 'pt'), en: assetPath(asset.slug, 'en') }}>
+  <nav class="text-sm text-muted mb-4" aria-label="Breadcrumb">
+    <a href={route('assets', lang)} class="hover:text-text">{s.nav.assets}</a>
+    <span class="mx-1">/</span>
+    <span>{kindLabel(asset, lang)}</span>
+  </nav>
+
+  <header class="mb-6">
+    <div class="flex flex-wrap items-center gap-3">
+      <h1 class="text-3xl font-bold tracking-tight">{name}</h1>
+      <span class="text-muted font-mono">{asset.symbol}</span>
+      <span class="text-xs rounded-full border border-border px-2 py-0.5 text-muted">{kindLabel(asset, lang)}</span>
+      <span class="sm:ml-auto"><Fragment set:html={watchButton(asset, lang, { label: true })} /></span>
+    </div>
+    <div class="mt-4" data-asset-quote data-slug={asset.slug}>
+      <Fragment set:html={renderAssetQuote(asset, ds, lang)} />
+    </div>
+    <div class="mt-3"><DataStamp name={dataset} updatedAt={updatedAt} source={T.source[dataset]} /></div>
+  </header>
+
+  {asset.binance ? <CryptoChart pair={asset.binance} /> : asset.tv && <TradingViewChart symbol={asset.tv} />}
+  {!asset.binance && (
+    <p class="text-xs text-muted mt-2">
+      <Fragment set:html={T.chartTip} />
+      <a href={ROUTES.indicators.pt} class="text-accent" hreflang={lang === 'pt' ? undefined : 'pt-BR'}>{T.learn}</a>.
+    </p>
+  )}
+
+  <div class="mt-6"><TechnicalGauge asset={asset} /></div>
+
+  <div class="mt-6">
+    <section class="rounded-xl border border-border bg-surface p-5">
+      <h2 class="font-semibold mb-2">{T.about}</h2>
+      <p class="text-sm text-text/90 leading-relaxed">{about}</p>
+      <p class="text-xs text-muted mt-3">{s.common.notAdvice}</p>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  import { assetBySlug, datasetFor } from '../data/assets';
+  import { pageLang } from '../i18n';
+  import { fetchDatasets } from '../lib/market';
+  import { renderAssetQuote } from '../lib/render';
+  import { every, REFRESH_MS, setStamp } from '../lib/live';
+  import { bindWatchButtons } from '../lib/watchlist';
+
+  bindWatchButtons();
+
+  const lang = pageLang();
+  const box = document.querySelector<HTMLElement>('[data-asset-quote]');
+  const asset = box && assetBySlug(box.dataset.slug!);
+
+  if (box && asset) {
+    const name = datasetFor(asset);
+    every(REFRESH_MS, async () => {
+      const ds = await fetchDatasets([name]);
+      const data = ds[name];
+      if (!data) return;
+      const html = renderAssetQuote(asset, ds, lang);
+      if (html) box.innerHTML = html;
+      setStamp(name, data.updatedAt);
+    });
+  }
+</script>

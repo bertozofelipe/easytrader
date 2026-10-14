@@ -1,0 +1,22 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { route } from '../../i18n';
+---
+
+<Layout title="Privacy policy" alternates={{ pt: route('privacy', 'pt'), en: route('privacy', 'en') }}>
+  <article class="prose-et max-w-3xl">
+    <h1>Privacy policy</h1>
+    <p class="text-warn">Draft — to be reviewed before launch. If this version and the Portuguese one differ, the Portuguese version prevails.</p>
+    <h2>Data we collect</h2>
+    <p>
+      Easytrader does not require sign-up. Preferences such as your watchlist, calculator inputs and filters are saved only in
+      your browser (<code>localStorage</code>) and are not sent to our servers.
+    </p>
+    <h2>Usage statistics</h2>
+    <p>We use cookie-free analytics with no personal identification, only to count visits and the most viewed pages.</p>
+    <h2>Third-party content</h2>
+    <p>Some widgets (for example, TradingView) are loaded from third-party servers and follow those providers' policies.</p>
+    <h2>Your rights (LGPD)</h2>
+    <p>If you have questions about your data, contact us through the project's GitHub repository.</p>
+  </article>
+</Layout>

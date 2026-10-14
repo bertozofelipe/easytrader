@@ -1,41 +1,69 @@
 ---
 import { NAV, SITE } from '../config';
+import { hasRoute, langFromPath, LANGS, LOCALE, route, type Lang } from '../i18n';
+import { t } from '../i18n/ui';
 
-const path = Astro.url.pathname;
+interface Props {
+  /** Caminho da página atual em cada idioma; sem tradução, o seletor leva à home do idioma. */
+  alternates?: Partial<Record<Lang, string>>;
+}
+
+const { alternates = {} } = Astro.props;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const lang = langFromPath(path);
+const s = t(lang);
+const nav = NAV.filter((item) => hasRoute(item.key, lang)).map((item) => ({ href: route(item.key, lang), label: s.nav[item.label] }));
 const isActive = (href: string) => path === href || path.startsWith(`${href}/`);
+const switcher = LANGS.map((l) => ({ lang: l, href: alternates[l] ?? route('home', l), label: l.toUpperCase() }));
 ---
 
 <header class="border-b border-border bg-surface/80 backdrop-blur sticky top-0 z-20">
   <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-    <a href="/" class="font-bold text-lg tracking-tight">
+    <a href={route('home', lang)} class="font-bold text-lg tracking-tight">
       <span class="text-accent">Easy</span>trader
     </a>
 
-    <nav class="hidden md:flex items-center gap-1 text-sm" aria-label="Principal">
-      {NAV.map((item) => (
-        <a
-          href={item.href}
-          class:list={[
-            'px-3 py-1.5 rounded-md transition-colors',
-            isActive(item.href) ? 'bg-surface-2 text-text' : 'text-muted hover:text-text',
-          ]}
-        >
-          {item.label}
-        </a>
-      ))}
-    </nav>
-
-    <details class="md:hidden relative">
-      <summary class="list-none cursor-pointer px-3 py-1.5 rounded-md border border-border text-sm" aria-label="Abrir menu">
-        Menu
-      </summary>
-      <nav class="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-surface p-2 flex flex-col text-sm shadow-xl" aria-label={`Menu ${SITE.name}`}>
-        {NAV.map((item) => (
-          <a href={item.href} class:list={['px-3 py-2 rounded-md', isActive(item.href) ? 'bg-surface-2' : 'hover:bg-surface-2']}>
+    <div class="flex items-center gap-2">
+      <nav class="hidden md:flex items-center gap-1 text-sm" aria-label={s.nav.main}>
+        {nav.map((item) => (
+          <a
+            href={item.href}
+            class:list={[
+              'px-3 py-1.5 rounded-md transition-colors',
+              isActive(item.href) ? 'bg-surface-2 text-text' : 'text-muted hover:text-text',
+            ]}
+          >
             {item.label}
           </a>
         ))}
       </nav>
-    </details>
+
+      <nav class="flex items-center rounded-md border border-border text-xs overflow-hidden" aria-label={s.nav.language}>
+        {switcher.map((l) => (
+          <a
+            href={l.href}
+            hreflang={LOCALE[l.lang]}
+            lang={LOCALE[l.lang]}
+            aria-current={l.lang === lang ? 'true' : undefined}
+            class:list={['px-2 py-1', l.lang === lang ? 'bg-surface-2 text-text font-semibold' : 'text-muted hover:text-text']}
+          >
+            {l.label}
+          </a>
+        ))}
+      </nav>
+
+      <details class="md:hidden relative">
+        <summary class="list-none cursor-pointer px-3 py-1.5 rounded-md border border-border text-sm" aria-label={s.nav.openMenu}>
+          {s.nav.menu}
+        </summary>
+        <nav class="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-surface p-2 flex flex-col text-sm shadow-xl" aria-label={`${s.nav.menu} ${SITE.name}`}>
+          {nav.map((item) => (
+            <a href={item.href} class:list={['px-3 py-2 rounded-md', isActive(item.href) ? 'bg-surface-2' : 'hover:bg-surface-2']}>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+      </details>
+    </div>
   </div>
 </header>
