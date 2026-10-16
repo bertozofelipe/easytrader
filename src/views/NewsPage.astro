@@ -114,6 +114,12 @@ const defaultLang = lang === 'en' ? 'en' : 'todos';
   } catch {
     // Sem localStorage (modo privado etc.): usa o padrão.
   }
+  // Link direto para uma categoria (ex.: ?cat=commodities, usado pela home).
+  const linked = new URLSearchParams(location.search).get('cat');
+  if (linked && filters.querySelector(`[data-filter-category="${CSS.escape(linked)}"]`)) {
+    state.category = linked;
+    state.group = 'todas';
+  }
 
   // Commodities reúne os feeds dedicados e as matérias de outros feeds que
   // ganharam o selo de uma commodity (data-commodity).

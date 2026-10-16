@@ -306,10 +306,33 @@ export function renderFearGreedMini(data: SentimentData, lang: Lang): string {
  * Notícias da home. Em português: metade em português e metade em inglês. Em
  * inglês: só notícias em inglês. Mais recentes primeiro.
  */
-export function pickHomeNews(items: NewsItem[], lang: Lang, n = 8): NewsItem[] {
+export function pickHomeNews(items: NewsItem[], lang: Lang, n = 8, exclude: NewsItem[] = []): NewsItem[] {
+  if (exclude.length) items = items.filter((i) => !exclude.includes(i));
   if (lang === 'en') return items.filter((i) => i.lang === 'en').slice(0, n);
   const half = Math.ceil(n / 2);
   const pt = items.filter((i) => i.lang === 'pt').slice(0, half);
   const en = items.filter((i) => i.lang !== 'pt').slice(0, n - pt.length);
   return [...pt, ...en].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/**
+ * Commodities da home: a mais recente de cada grupo (metais, energia, grãos...),
+ * depois de commodities ainda não mostradas (fontes diferentes costumam repetir
+ * a mesma notícia) e, se sobrar espaço, as mais recentes. Em inglês, só em inglês.
+ */
+export function pickHomeCommodities(items: NewsItem[], lang: Lang, n = 6): NewsItem[] {
+  const pool = items.filter((i) => i.commodity && (lang === 'pt' || i.lang === 'en'));
+  const picked: NewsItem[] = [];
+  const add = (key: (i: NewsItem) => string | undefined) => {
+    const seen = new Set(picked.map(key));
+    for (const i of pool) {
+      if (picked.length >= n || picked.includes(i) || seen.has(key(i))) continue;
+      seen.add(key(i));
+      picked.push(i);
+    }
+  };
+  add((i) => commodityById(i.commodity)?.group);
+  add((i) => i.commodity);
+  add((i) => i.link);
+  return picked.slice(0, n).sort((a, b) => b.date.localeCompare(a.date));
 }

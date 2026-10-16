@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import WatchlistBox from '../components/WatchlistBox.astro';
 import { route, ROUTES, type Lang } from '../i18n';
 import { loadData, type NewsData, type SentimentData, type TickerData } from '../lib/market';
-import { pickHomeNews, renderFearGreedMini, renderMarketOverview, renderNewsItems } from '../lib/render';
+import { pickHomeCommodities, pickHomeNews, renderFearGreedMini, renderMarketOverview, renderNewsItems } from '../lib/render';
 
 interface Props {
   lang: Lang;
@@ -16,6 +16,7 @@ const [ticker, news, sentiment] = await Promise.all([
   loadData<NewsData>('news'),
   loadData<SentimentData>('sentiment'),
 ]);
+const commodities = news ? pickHomeCommodities(news.items, lang) : [];
 
 const T = {
   pt: {
@@ -23,6 +24,8 @@ const T = {
     title: 'O dia a dia do trader em um só lugar.',
     lead: 'Notícias, calendário econômico, análise de ativos e uma escola para quem está começando. Em português e gratuito.',
     latest: 'Últimas notícias',
+    commodities: 'Commodities',
+    commoditiesDesc: 'Metais, energia e agro no Brasil e no mundo',
     seeAll: 'Ver todas',
     market: 'Mercado agora',
     assets: 'Ativos',
@@ -48,6 +51,8 @@ const T = {
     title: "The trader's day, all in one place.",
     lead: 'News, economic calendar, asset analysis, a technical gauge for every asset and trading calculators. Free.',
     latest: 'Latest news',
+    commodities: 'Commodities',
+    commoditiesDesc: 'Metals, energy and agriculture worldwide',
     seeAll: 'See all',
     market: 'Market now',
     assets: 'Assets',
@@ -79,15 +84,27 @@ const T = {
   </section>
 
   <div class="grid gap-4 lg:grid-cols-3">
-    <section class="lg:col-span-2 rounded-xl border border-border bg-surface px-5 py-4" aria-labelledby="ultimas">
-      <div class="flex items-baseline justify-between">
-        <h2 id="ultimas" class="font-semibold">{T.latest}</h2>
-        <a href={route('news', lang)} class="text-sm text-accent">{T.seeAll}</a>
-      </div>
-      <ul class="mt-1" data-home-news>
-        {news ? <Fragment set:html={renderNewsItems(pickHomeNews(news.items, lang), lang, { compact: true })} /> : <li class="py-4 text-muted">{T.loading}</li>}
-      </ul>
-    </section>
+    <div class="lg:col-span-2 flex flex-col gap-4">
+      <section class="rounded-xl border border-border bg-surface px-5 py-4" aria-labelledby="ultimas">
+        <div class="flex items-baseline justify-between">
+          <h2 id="ultimas" class="font-semibold">{T.latest}</h2>
+          <a href={route('news', lang)} class="text-sm text-accent">{T.seeAll}</a>
+        </div>
+        <ul class="mt-1" data-home-news>
+          {news ? <Fragment set:html={renderNewsItems(pickHomeNews(news.items, lang, 8, commodities), lang, { compact: true })} /> : <li class="py-4 text-muted">{T.loading}</li>}
+        </ul>
+      </section>
+
+      <section class="rounded-xl border border-border bg-surface px-5 py-4" aria-labelledby="commodities" data-home-commodities-box hidden={!!news && commodities.length === 0}>
+        <div class="flex items-baseline justify-between gap-3">
+          <h2 id="commodities" class="font-semibold">{T.commodities} <span class="text-xs font-normal text-muted">{T.commoditiesDesc}</span></h2>
+          <a href={`${route('news', lang)}?cat=commodities`} class="text-sm text-accent shrink-0">{T.seeAll}</a>
+        </div>
+        <ul class="mt-1" data-home-commodities>
+          {news ? <Fragment set:html={renderNewsItems(commodities, lang, { compact: true })} /> : <li class="py-4 text-muted">{T.loading}</li>}
+        </ul>
+      </section>
+    </div>
 
     <div class="flex flex-col gap-4">
       <WatchlistBox hideEmpty />
@@ -134,7 +151,7 @@ const T = {
 <script>
   import { pageLang } from '../i18n';
   import { fetchLatest, type NewsData, type SentimentData, type TickerData } from '../lib/market';
-  import { pickHomeNews, renderFearGreedMini, renderMarketOverview, renderNewsItems } from '../lib/render';
+  import { pickHomeCommodities, pickHomeNews, renderFearGreedMini, renderMarketOverview, renderNewsItems } from '../lib/render';
   import { every, REFRESH_MS, setHtml } from '../lib/live';
 
   const lang = pageLang();
@@ -145,7 +162,12 @@ const T = {
       fetchLatest<NewsData>('news'),
       fetchLatest<SentimentData>('sentiment'),
     ]);
-    if (news) setHtml('[data-home-news]', renderNewsItems(pickHomeNews(news.items, lang), lang, { now: Date.now(), compact: true }));
+    if (news) {
+      const commodities = pickHomeCommodities(news.items, lang);
+      setHtml('[data-home-news]', renderNewsItems(pickHomeNews(news.items, lang, 8, commodities), lang, { now: Date.now(), compact: true }));
+      setHtml('[data-home-commodities]', renderNewsItems(commodities, lang, { now: Date.now(), compact: true }));
+      document.querySelector<HTMLElement>('[data-home-commodities-box]')!.hidden = commodities.length === 0;
+    }
     if (ticker) setHtml('[data-home-market]', renderMarketOverview(ticker.items, lang));
     if (sentiment) setHtml('[data-home-fng]', renderFearGreedMini(sentiment, lang));
   });
