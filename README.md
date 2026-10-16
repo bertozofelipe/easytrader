@@ -41,6 +41,7 @@ O workflow [`data.yml`](.github/workflows/data.yml) roda a cada 15 min, executa 
 | `fx.json` | EUR/USD, GBP/USD, USD/JPY, USD/BRL (diário) | BCE via Frankfurter |
 | `us.json` | ETFs de índices, ouro, petróleo e ações dos EUA | Finnhub (requer chave) |
 | `cboe.json` | VIX (pontos do índice, 15 min de atraso) | Cboe |
+| `commodities.json` | 12 commodities (futuros mais próximos, ~15 min de atraso), lista em [`src/data/commodities.ts`](src/data/commodities.ts) | Yahoo Finance (API não oficial); metais com reserva na gold-api.com |
 | `news.json` | Notícias das últimas 48 h (título, trecho, link) | RSS, feeds em [`scripts/feeds.mjs`](scripts/feeds.mjs) |
 | `ticker.json` | Itens da faixa de cotações | derivado dos anteriores |
 | `status.json` | Situação de cada coleta | — |

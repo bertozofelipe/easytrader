@@ -155,6 +155,24 @@ export interface NewsData extends Dataset {
   items: NewsItem[];
 }
 
+/** Cotações de commodities (commodities.json); `symbol` é o do Yahoo em COMMODITY_QUOTES. */
+export interface CommodityQuote {
+  symbol: string;
+  price: number;
+  prevClose: number | null;
+  changePct: number | null;
+  asOf: string;
+  source: string;
+  /** Preço à vista da gold-api.com (o Yahoo falhou para esse metal). */
+  spot?: boolean;
+}
+
+export interface CommodityQuotesData extends Dataset {
+  source: string;
+  failed: string[];
+  quotes: CommodityQuote[];
+}
+
 /** Arquivos de dados de cotação, por nome (ver datasetFor). */
 export type Datasets = { crypto?: CryptoData | null } & Partial<Record<Exclude<DatasetName, 'crypto'>, QuotesData | null>>;
 

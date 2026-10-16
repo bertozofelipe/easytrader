@@ -105,5 +105,39 @@ export function classifyCommodity(title: string, summary: string, { strict }: { 
   return (firstCommodity(t) ?? firstCommodity(s))?.id ?? null;
 }
 
-export const commodityById = (id: string | null | undefined) => COMMODITIES.find((c) => c.id === id);
+/**
+ * Cotações exibidas na home: contrato futuro mais próximo no Yahoo Finance
+ * (cerca de 15 min de atraso). Grãos, boi, café e açúcar vêm em centavos de
+ * dólar (USX) e são convertidos para dólar. `spot`: símbolo na gold-api.com,
+ * usado se o Yahoo falhar (preço à vista, sem variação).
+ */
+export interface CommodityQuoteDef {
+  id: string;
+  /** Rótulo quando difere do nome da commodity (ex.: Brent). */
+  pt?: string;
+  en?: string;
+  yahoo: string;
+  spot?: string;
+  unit: string;
+  unitEn?: string;
+  /** Casas decimais do preço em dólar. */
+  decimals: number;
+}
+
+export const COMMODITY_QUOTES: CommodityQuoteDef[] = [
+  { id: 'ouro', yahoo: 'GC=F', spot: 'XAU', unit: 'oz', decimals: 2 },
+  { id: 'prata', yahoo: 'SI=F', spot: 'XAG', unit: 'oz', decimals: 2 },
+  { id: 'cobre', yahoo: 'HG=F', spot: 'HG', unit: 'lb', decimals: 3 },
+  { id: 'petroleo', pt: 'WTI', en: 'WTI', yahoo: 'CL=F', unit: 'barril', unitEn: 'bbl', decimals: 2 },
+  { id: 'petroleo', pt: 'Brent', en: 'Brent', yahoo: 'BZ=F', unit: 'barril', unitEn: 'bbl', decimals: 2 },
+  { id: 'gas', yahoo: 'NG=F', unit: 'MMBtu', decimals: 3 },
+  { id: 'soja', yahoo: 'ZS=F', unit: 'bushel', decimals: 2 },
+  { id: 'milho', yahoo: 'ZC=F', unit: 'bushel', decimals: 2 },
+  { id: 'trigo', yahoo: 'ZW=F', unit: 'bushel', decimals: 2 },
+  { id: 'boi', pt: 'Boi (EUA)', en: 'Live cattle', yahoo: 'LE=F', unit: 'lb', decimals: 3 },
+  { id: 'cafe', yahoo: 'KC=F', unit: 'lb', decimals: 3 },
+  { id: 'acucar', yahoo: 'SB=F', unit: 'lb', decimals: 4 },
+];
+
+export const commodityById =(id: string | null | undefined) => COMMODITIES.find((c) => c.id === id);
 export const commodityGroup = (id: CommodityGroup) => COMMODITY_GROUPS.find((g) => g.id === id)!;

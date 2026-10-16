@@ -2,12 +2,12 @@
 // atualizar os dados, para manter um único markup por bloco. Todos recebem o
 // idioma da página (no navegador: pageLang()).
 import { ASSETS, assetByCoingecko, assetBySlug, assetName, datasetFor, type Asset } from '../data/assets';
-import { commodityById, commodityGroup } from '../data/commodities';
+import { COMMODITY_QUOTES, commodityById, commodityGroup } from '../data/commodities';
 import { assetPath, type Lang } from '../i18n';
 import { t } from '../i18n/ui';
-import { formatDate, formatDateTime, formatPct, formatPrice, formatRelative, formatUsdCompact, trendClass, usd } from './format';
+import { formatDate, formatDateTime, formatNumber, formatPct, formatPrice, formatRelative, formatUsdCompact, trendClass, usd } from './format';
 import { ratingPill } from './gauge-view';
-import type { Coin, CryptoData, Datasets, NewsItem, SentimentData, SignalsData, TickerItem } from './market';
+import type { Coin, CommodityQuotesData, CryptoData, Datasets, NewsItem, SentimentData, SignalsData, TickerItem } from './market';
 
 export const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -313,6 +313,27 @@ export function pickHomeNews(items: NewsItem[], lang: Lang, n = 8, exclude: News
   const pt = items.filter((i) => i.lang === 'pt').slice(0, half);
   const en = items.filter((i) => i.lang !== 'pt').slice(0, n - pt.length);
   return [...pt, ...en].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/** Cotações de commodities da home, na ordem de COMMODITY_QUOTES. */
+export function renderCommodityQuotes(data: CommodityQuotesData, lang: Lang): string {
+  const bySymbol = new Map(data.quotes.map((q) => [q.symbol, q]));
+  const futures = lang === 'en' ? 'Front-month futures' : 'Contrato futuro mais próximo';
+  const spot = lang === 'en' ? 'Spot price (gold-api.com)' : 'Preço à vista (gold-api.com)';
+  return COMMODITY_QUOTES.map((d) => {
+    const q = bySymbol.get(d.yahoo);
+    const c = commodityById(d.id)!;
+    if (!q) return '';
+    const name = (lang === 'en' ? d.en : d.pt) ?? c[lang];
+    const unit = lang === 'en' ? (d.unitEn ?? d.unit) : d.unit;
+    return `<li class="rounded-lg border border-border px-3 py-2" title="${escape(`${c[lang]} · ${q.spot ? spot : `${futures} (${d.yahoo})`}`)}">
+  <p class="flex items-center justify-between gap-2 text-xs">
+    <span class="flex items-center gap-1.5 min-w-0 text-muted"><span class="text-[8px] ${commodityGroup(c.group).tone}" aria-hidden="true">●</span><span class="truncate">${escape(name)}</span></span>
+    ${pctSpan(q.changePct, lang)}
+  </p>
+  <p class="mt-0.5 font-mono tabular-nums">${usd(lang)}${formatNumber(q.price, lang, d.decimals)}<span class="font-sans text-xs text-muted">/${escape(unit)}</span></p>
+</li>`;
+  }).join('');
 }
 
 /**

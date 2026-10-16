@@ -15,6 +15,8 @@ import { fetchFearGreed } from './providers/alternative.mjs';
 import { fetchFx } from './providers/frankfurter.mjs';
 import { fetchUsQuotes } from './providers/finnhub.mjs';
 import { fetchNews } from './providers/rss.mjs';
+import { fetchCommodityQuotes } from './providers/commodity-quotes.mjs';
+import { COMMODITY_QUOTES } from '../src/data/commodities.ts';
 import { fetchCboeIndices } from './providers/cboe.mjs';
 import { fetchSignals } from './providers/history.mjs';
 import { fetchSignalsIntraday } from './providers/intraday.mjs';
@@ -29,6 +31,7 @@ const DATASETS = {
   fx: () => fetchFx(FX_PAIRS, FX_CURRENCIES),
   us: () => fetchUsQuotes(US_SYMBOLS),
   cboe: () => fetchCboeIndices(CBOE_ASSETS),
+  commodities: () => fetchCommodityQuotes(COMMODITY_QUOTES),
   news: () => fetchNews(FEEDS, { maxAgeHours: NEWS_MAX_AGE_HOURS, perFeed: NEWS_PER_FEED, maxTotal: NEWS_MAX_TOTAL }),
   signals: () => fetchSignals(ASSETS),
   'signals-intraday': () => fetchSignalsIntraday(ASSETS),
