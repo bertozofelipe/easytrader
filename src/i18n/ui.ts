@@ -58,7 +58,7 @@ const pt = {
     cambio: { title: 'Câmbio', note: 'Referência diária do Banco Central Europeu.' },
     cripto: { title: 'Cripto', note: 'Variação em 24h. Painel completo em /cripto.' },
   } as Record<string, { title: string; note: string }>,
-  newsCategory: { mercados: 'Mercados globais', brasil: 'Brasil', forex: 'Forex', cripto: 'Cripto' },
+  newsCategory: { mercados: 'Mercados globais', brasil: 'Brasil', commodities: 'Commodities', forex: 'Forex', cripto: 'Cripto' },
   fng: {
     labels: { 'Medo extremo': 'Medo extremo', Medo: 'Medo', Neutro: 'Neutro', 'Ganância': 'Ganância', 'Ganância extrema': 'Ganância extrema' } as Record<string, string>,
     history: 'Histórico de 30 dias',
@@ -178,7 +178,7 @@ const en: UI = {
     cambio: { title: 'FX', note: 'European Central Bank daily reference rates.' },
     cripto: { title: 'Crypto', note: '24h change. Full dashboard in /en/crypto.' },
   },
-  newsCategory: { mercados: 'Global markets', brasil: 'Brazil', forex: 'Forex', cripto: 'Crypto' },
+  newsCategory: { mercados: 'Global markets', brasil: 'Brazil', commodities: 'Commodities', forex: 'Forex', cripto: 'Crypto' },
   fng: {
     labels: { 'Medo extremo': 'Extreme fear', Medo: 'Fear', Neutro: 'Neutral', 'Ganância': 'Greed', 'Ganância extrema': 'Extreme greed' },
     history: '30-day history',

@@ -2,6 +2,7 @@
 // atualizar os dados, para manter um único markup por bloco. Todos recebem o
 // idioma da página (no navegador: pageLang()).
 import { ASSETS, assetByCoingecko, assetBySlug, assetName, datasetFor, type Asset } from '../data/assets';
+import { commodityById, commodityGroup } from '../data/commodities';
 import { assetPath, type Lang } from '../i18n';
 import { t } from '../i18n/ui';
 import { formatDate, formatDateTime, formatPct, formatPrice, formatRelative, formatUsdCompact, trendClass, usd } from './format';
@@ -262,9 +263,12 @@ export function renderNewsItems(items: NewsItem[], lang: Lang, { now, compact = 
   return items
     .map((n) => {
       const when = now ? formatRelative(n.date, now, lang) : formatDateTime(n.date, lang);
-      return `<li class="py-3 border-t border-border first:border-t-0" data-category="${n.category}" data-lang="${n.lang}">
+      const c = commodityById(n.commodity);
+      const commodity = c ? ` data-commodity="${c.id}" data-group="${c.group}"` : '';
+      return `<li class="py-3 border-t border-border first:border-t-0" data-category="${n.category}" data-lang="${n.lang}"${commodity}>
   <p class="text-xs text-muted flex flex-wrap items-center gap-x-2">
-    <span class="text-accent">${escape(cat[n.category])}</span>
+    ${c ? `<span class="rounded-full border px-1.5 font-medium ${commodityGroup(c.group).tone}">${escape(c[lang])}</span>` : ''}
+    <span class="text-accent">${escape(cat[n.category] ?? n.category)}</span>
     <span>${escape(n.source)}</span>
     ${n.lang !== lang ? `<span class="rounded border border-border px-1 text-[10px]">${n.lang.toUpperCase()}</span>` : ''}
     <time datetime="${n.date}">${when}</time>

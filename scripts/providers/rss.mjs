@@ -1,3 +1,4 @@
+import { classifyCommodity } from '../../src/data/commodities.ts';
 import { getText } from '../lib/http.mjs';
 
 // Leitor mínimo de RSS 2.0 (todos os feeds configurados usam RSS), sem dependências.
@@ -77,9 +78,13 @@ export async function fetchNews(feeds, { maxAgeHours, perFeed, maxTotal }) {
       return;
     }
     const { feed } = r.value;
+    const commodityFeed = feed.category === 'commodities';
     r.value.items
       .filter((it) => it.title && /^https?:\/\//.test(it.link) && it.date && !Number.isNaN(it.date.getTime()))
       .filter((it) => it.date.getTime() >= cutoff && it.date.getTime() <= Date.now() + 3_600_000)
+      .map((it) => ({ ...it, commodity: classifyCommodity(it.title, it.summary, { strict: !commodityFeed || !!feed.strict }) }))
+      // Feeds de commodities: só matérias que falam de uma commodity acompanhada.
+      .filter((it) => !commodityFeed || it.commodity)
       .slice(0, perFeed)
       .forEach((it) => {
         const key = normalizeTitle(it.title);
@@ -95,6 +100,7 @@ export async function fetchNews(feeds, { maxAgeHours, perFeed, maxTotal }) {
           source: feed.source,
           category: feed.category,
           lang: feed.lang,
+          ...(it.commodity && { commodity: it.commodity }),
         });
       });
   });

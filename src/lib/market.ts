@@ -135,7 +135,7 @@ export interface SignalsIntradayData extends Dataset {
   assets: Record<string, Partial<Record<IntradayTf, Gauge>> & { computedAt: string }>;
 }
 
-export type NewsCategory = 'mercados' | 'brasil' | 'forex' | 'cripto';
+export type NewsCategory = 'mercados' | 'brasil' | 'forex' | 'cripto' | 'commodities';
 
 export interface NewsItem {
   title: string;
@@ -146,6 +146,8 @@ export interface NewsItem {
   source: string;
   category: NewsCategory;
   lang: 'pt' | 'en';
+  /** Id em src/data/commodities.ts, quando a matéria trata de uma commodity. */
+  commodity?: string;
 }
 
 export interface NewsData extends Dataset {
