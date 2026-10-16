@@ -127,7 +127,7 @@ Cloudflare Pages / GitHub Pages <- build (Astro) <----------------+
 | Cripto (preços, candles, market cap) | **CoinGecko** (free), **Binance** API pública | Sem custo; respeitar rate limit |
 | Ações/índices EUA, forex, commodities | **Twelve Data**, **Finnhub**, **Alpha Vantage** (planos free) | Limites baixos; cache obrigatório; dados com delay |
 | Calendário econômico | **Widget TradingView** | Zero manutenção; alternativa: Finnhub free |
-| Notícias | **RSS** (Reuters, CoinDesk, Cointelegraph, FXStreet...) | Só título + trecho + link |
+| Notícias | **RSS** (Reuters, CoinDesk, Cointelegraph, investingLive...) | Só título + trecho + link |
 | Fear & Greed, dominância BTC | Alternative.me, CoinGecko | APIs públicas simples |
 | Resumo técnico | Widgets TradingView | Gratuitos, com marca TradingView |
 

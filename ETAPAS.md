@@ -45,7 +45,7 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ Commodities (16/10/2026): 11 feeds novos (6 em português, 5 em inglês) e classificador em `src/data/commodities.ts` (21 commodities em 5 grupos: metais, energia, grãos, pecuária, café/açúcar/outros). Só entram matérias de mercado (preço, oferta e demanda, bolsas, safra, resultados); selo da commodity em cada notícia, inclusive nas de feeds gerais; subfiltro por grupo com contagem. Total de notícias subiu para 240
 - ✅ `/calendario` com widget do TradingView (EUA, zona do euro, Reino Unido, Japão, China, Brasil) + guia de 9 eventos (Payroll, CPI, FOMC, PCE, PIB, PMI, seguro-desemprego, BCE, Copom)
 - ✅ Home com destaques do dia: últimas notícias (metade em português), mercado agora, medo e ganância, atalho para a agenda
-- ⬜ Opcional: fonte de forex em português
+- ✅ Forex (16/10/2026): FXStreet bloqueava os IPs do GitHub Actions (403 em todas as execuções); trocado por investingLive (ex-ForexLive) e Investing.com Forex, mais Investing.com Brasil Forex em português
 
 ## Etapa 4 — Indicadores técnicos ✅ (13/10/2026)
 

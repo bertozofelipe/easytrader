@@ -6,6 +6,9 @@
 // (agro e setoriais, que misturam técnica, clima e eventos) só com título que
 // cite a commodity e um termo de mercado. Nos demais feeds, matérias com título
 // assim também ganham o selo da commodity.
+//
+// Ordem importa: a mesma matéria em dois feeds fica com a categoria do primeiro,
+// então os feeds temáticos vêm antes dos gerais.
 
 export const FEEDS = [
   // Português
@@ -15,6 +18,7 @@ export const FEEDS = [
   { source: 'Canal Rural', url: 'https://www.canalrural.com.br/feed/', category: 'commodities', lang: 'pt', strict: true },
   { source: 'Money Times', url: 'https://www.moneytimes.com.br/tag/agronegocio/feed/', category: 'commodities', lang: 'pt', strict: true },
   { source: 'novaCana', url: 'https://www.novacana.com/rss', category: 'commodities', lang: 'pt', strict: true },
+  { source: 'Investing.com Brasil', url: 'https://br.investing.com/rss/news_1.rss', category: 'forex', lang: 'pt' },
   { source: 'Money Times', url: 'https://www.moneytimes.com.br/feed/', category: 'brasil', lang: 'pt' },
   { source: 'Investing.com Brasil', url: 'https://br.investing.com/rss/news.rss', category: 'mercados', lang: 'pt' },
   { source: 'Livecoins', url: 'https://livecoins.com.br/feed/', category: 'cripto', lang: 'pt' },
@@ -26,10 +30,12 @@ export const FEEDS = [
   { source: 'The Northern Miner', url: 'https://www.northernminer.com/feed/', category: 'commodities', lang: 'en', strict: true },
   { source: 'Beef Magazine', url: 'https://www.beefmagazine.com/rss.xml', category: 'commodities', lang: 'en', strict: true },
   { source: 'Farm Progress', url: 'https://www.farmprogress.com/rss.xml', category: 'commodities', lang: 'en', strict: true },
+  // FXStreet bloqueia (403) os IPs do GitHub Actions; substituído pelos dois abaixo.
+  { source: 'investingLive', url: 'https://investinglive.com/feed/', category: 'forex', lang: 'en' },
+  { source: 'Investing.com', url: 'https://www.investing.com/rss/news_1.rss', category: 'forex', lang: 'en' },
   { source: 'CNBC Markets', url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html', category: 'mercados', lang: 'en' },
   { source: 'MarketWatch', url: 'https://feeds.marketwatch.com/marketwatch/topstories/', category: 'mercados', lang: 'en' },
   { source: 'Investing.com', url: 'https://www.investing.com/rss/news.rss', category: 'mercados', lang: 'en' },
-  { source: 'FXStreet', url: 'https://www.fxstreet.com/rss/news', category: 'forex', lang: 'en' },
   { source: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', category: 'cripto', lang: 'en' },
   { source: 'Cointelegraph', url: 'https://cointelegraph.com/rss', category: 'cripto', lang: 'en' },
 ];
