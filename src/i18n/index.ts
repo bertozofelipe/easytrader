@@ -15,6 +15,7 @@ export const ROUTES = {
   calendar: { pt: '/calendario', en: '/en/calendar' },
   assets: { pt: '/ativos', en: '/en/assets' },
   crypto: { pt: '/cripto', en: '/en/crypto' },
+  intermarket: { pt: '/intermercados', en: '/en/intermarket' },
   tools: { pt: '/ferramentas', en: '/en/tools' },
   about: { pt: '/sobre', en: '/en/about' },
   risk: { pt: '/aviso-de-risco', en: '/en/risk-disclaimer' },

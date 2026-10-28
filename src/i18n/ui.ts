@@ -19,6 +19,7 @@ const pt = {
     indicators: 'Indicadores',
     school: 'Escola',
     tools: 'Ferramentas',
+    intermarket: 'Intermercados',
     language: 'Idioma',
   },
   footer: {
@@ -119,6 +120,30 @@ const pt = {
     names: { rsi: 'RSI (14)', stoch: 'Estocástico (14, 3, 3)', cci: 'CCI (20)', adx: 'ADX (14)', mom: 'Momento (10)', macd: 'MACD (12, 26, 9)', bb: 'Bollinger %B (20, 2)' },
     signal: 'sinal',
   },
+  intermarket: {
+    strength: { forte: 'forte', moderada: 'moderada', fraca: 'fraca', nula: 'sem relação clara' },
+    positive: 'positiva',
+    negative: 'negativa',
+    regime: 'depende do regime',
+    status: {
+      'em-linha': 'Em linha com o padrão',
+      invertida: 'Fora do padrão',
+      fraca: 'Relação fraca agora',
+      'regime-pos': 'Mesma direção',
+      'regime-neg': 'Direções opostas',
+    },
+    expected: 'Padrão histórico',
+    now: (w: number) => `Agora (${w} pregões)`,
+    monthAgo: 'um mês antes',
+    change1d: 'no dia',
+    change1m: 'em 1 mês',
+    bp: 'pb',
+    bpTitle: 'pontos-base (0,01 ponto percentual)',
+    cellTitle: (a: string, b: string, r: string, s: string, before: string) => `${a} × ${b}: ${r} (${s}); ${before} um mês antes`,
+    pairButton: (a: string, b: string) => `Ver a correlação de ${a} × ${b} no gráfico`,
+    noData: 'Sem dados suficientes',
+    asset: 'Ver ativo',
+  },
 };
 
 export type UI = typeof pt;
@@ -139,6 +164,7 @@ const en: UI = {
     indicators: 'Indicators',
     school: 'School',
     tools: 'Tools',
+    intermarket: 'Intermarket',
     language: 'Language',
   },
   footer: {
@@ -237,6 +263,30 @@ const en: UI = {
     },
     names: { rsi: 'RSI (14)', stoch: 'Stochastic (14, 3, 3)', cci: 'CCI (20)', adx: 'ADX (14)', mom: 'Momentum (10)', macd: 'MACD (12, 26, 9)', bb: 'Bollinger %B (20, 2)' },
     signal: 'signal',
+  },
+  intermarket: {
+    strength: { forte: 'strong', moderada: 'moderate', fraca: 'weak', nula: 'no clear relationship' },
+    positive: 'positive',
+    negative: 'negative',
+    regime: 'depends on the regime',
+    status: {
+      'em-linha': 'In line with the pattern',
+      invertida: 'Breaking the pattern',
+      fraca: 'Weak right now',
+      'regime-pos': 'Moving together',
+      'regime-neg': 'Moving apart',
+    },
+    expected: 'Historical pattern',
+    now: (w) => `Now (${w} sessions)`,
+    monthAgo: 'a month ago',
+    change1d: 'today',
+    change1m: '1 month',
+    bp: 'bp',
+    bpTitle: 'basis points (0.01 percentage point)',
+    cellTitle: (a, b, r, s, before) => `${a} × ${b}: ${r} (${s}); ${before} a month ago`,
+    pairButton: (a, b) => `Show the ${a} × ${b} correlation on the chart`,
+    noData: 'Not enough data',
+    asset: 'View asset',
   },
 };
 

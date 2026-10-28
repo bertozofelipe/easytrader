@@ -1,0 +1,396 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import DataStamp from '../components/DataStamp.astro';
+import { CHANGE_LAG, CLASSIC_PAIRS, CORR_WINDOWS, DEFAULT_WINDOW, INTERMARKET_SERIES, seriesById, seriesName } from '../data/intermarket';
+import { route, type Lang } from '../i18n';
+import { t } from '../i18n/ui';
+import { formatDate } from '../lib/format';
+import { allPairs, biggestChanges, dailyReturns, lastDate } from '../lib/intermarket';
+import { expectedLabel, renderChanges, renderClassicNow, renderMatrix, renderPanel } from '../lib/intermarket-view';
+import { loadData, type IntermarketData } from '../lib/market';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const data = await loadData<IntermarketData>('intermarket');
+const returns = data ? dailyReturns(data) : null;
+const DEFAULT_PAIR = ['dxy', 'gold'];
+
+const T = {
+  pt: {
+    title: 'Análise intermercados',
+    description: 'Como ações, juros, dólar, commodities e cripto se movem juntos: matriz de correlação atualizada, mudanças do último mês e as relações clássicas da análise intermercados.',
+    subtitle: 'Os mercados não andam sozinhos. Veja como ações, juros, dólar, commodities e cripto estão se relacionando agora, e o que mudou no último mês.',
+    panel: 'Os mercados agora',
+    panelNote: 'Fechamentos diários; o último valor pode ser o pregão em andamento. Juros em pontos-base (pb).',
+    corr: 'Matriz de correlação',
+    corrDesc: (lag: number) =>
+      `Correlação das variações diárias. Azul: andam juntos; laranja: andam em direções opostas. As setas mostram quanto a correlação mudou em relação a ${lag} pregões atrás (cerca de um mês). Toque num quadro para ver o histórico no gráfico.`,
+    window: 'Janela',
+    windowGroup: 'Janela da correlação',
+    sessions: (n: number) => `${n} pregões`,
+    windowHint: { 20: '≈ 1 mês', 60: '≈ 3 meses', 120: '≈ 6 meses' } as Record<number, string>,
+    changes: 'O que mudou no último mês',
+    changesDesc: 'Pares cuja correlação mais se moveu em relação a um mês atrás, na janela escolhida.',
+    history: 'Correlação ao longo do tempo',
+    historyDesc: 'Correlação móvel do par escolhido. Acima de zero, os dois andaram juntos; abaixo, em direções opostas.',
+    pairA: 'Mercado A',
+    pairB: 'Mercado B',
+    asOf: (d: string) => `Correlação com dados até ${d}`,
+    method: 'Correlação de Pearson dos retornos diários (nos juros, da variação da taxa), recalculada a cada hora.',
+    legendPos: 'Positiva',
+    legendNeg: 'Negativa',
+    loading: 'Carregando…',
+    classic: 'Relações clássicas',
+    classicDesc: 'Padrões que a análise intermercados observa há décadas, e se eles estão valendo agora. Relações mudam com o tempo: um padrão "fora do lugar" é informação, não sinal de operação.',
+    expected: 'Padrão histórico',
+    pairs: {
+      'dxy-gold': 'O ouro é cotado em dólar: quando o dólar se fortalece, o ouro fica mais caro em outras moedas e tende a cair. Compras de bancos centrais e momentos de medo podem fazer os dois subirem juntos.',
+      'dxy-oil': 'O petróleo também é cotado em dólar, e um dólar forte costuma pesar sobre as commodities. Choques de oferta (OPEP+, guerras, sanções) dominam essa relação com frequência.',
+      'us10y-spx': 'Quando o mercado teme inflação, os juros sobem e as ações caem (direções opostas). Quando o motor é o crescimento econômico, juros e ações sobem juntos. O sinal da correlação mostra qual força está dominando.',
+      'oil-us10y': 'Petróleo mais caro alimenta a inflação esperada, e os juros longos tendem a acompanhar.',
+      'copper-us10y': 'O cobre está em quase toda a indústria (o "Dr. Copper") e reage ao crescimento global, assim como os juros longos.',
+      'vix-spx': 'O VIX mede o medo embutido nas opções do S&P 500 e sobe quando as ações caem. É uma das relações mais estáveis do mercado.',
+      'btc-spx': 'Desde 2020, o bitcoin passou a se mover junto com as ações, sobretudo as de tecnologia, como um ativo de risco. A relação oscila bastante.',
+      'usdbrl-ibov': 'Em momentos de aversão a risco, o investidor estrangeiro sai do Brasil: o dólar sobe frente ao real e a bolsa cai.',
+      'dxy-usdbrl': 'Um dólar forte no mundo costuma enfraquecer as moedas emergentes, inclusive o real. Notícias locais (contas públicas, Selic) podem descolar os dois.',
+    } as Record<string, string>,
+    learn: 'Entenda a análise intermercados',
+    learnHtml: `
+      <h3>O que é</h3>
+      <p>A análise intermercados estuda como os grandes mercados influenciam uns aos outros. A ideia, popularizada por John Murphy no livro <em>Intermarket Analysis</em>, é que nenhum mercado se move isolado: os juros afetam as ações, o dólar afeta as commodities, e o apetite por risco passa por todos eles, inclusive pela cripto.</p>
+      <h3>Os quatro mercados</h3>
+      <ul>
+        <li><strong>Juros (títulos):</strong> o custo do dinheiro. Juros em alta encarecem o crédito e reduzem o valor presente dos lucros das empresas.</li>
+        <li><strong>Ações:</strong> refletem a expectativa de lucro e crescimento.</li>
+        <li><strong>Commodities:</strong> petróleo, metais e grãos, ligados à inflação e à atividade industrial.</li>
+        <li><strong>Dólar:</strong> a moeda de referência do mundo. Dólar forte tende a pressionar commodities e mercados emergentes.</li>
+      </ul>
+      <h3>O ciclo de Murphy</h3>
+      <p>Num ciclo econômico típico, os mercados costumam virar em sequência. Perto do fim de uma desaceleração, os títulos sobem primeiro (os juros param de subir), depois as ações e, por último, as commodities. Perto do pico do ciclo, a ordem se repete na queda. A sequência é uma tendência histórica, não uma regra: há ciclos em que ela falha ou se embaralha.</p>
+      <h3>Como ler a correlação</h3>
+      <ul>
+        <li><strong>+1</strong>: os dois mercados sobem e caem juntos; <strong>−1</strong>: sempre em direções opostas; perto de <strong>0</strong>: sem relação linear clara.</li>
+        <li>Acima de 0,7 (em módulo) é forte; entre 0,4 e 0,7, moderada; entre 0,2 e 0,4, fraca.</li>
+        <li>A conta usa as <strong>variações diárias</strong>, não os preços. Dois preços em tendência parecem correlacionados mesmo sem relação entre si.</li>
+        <li>Janelas curtas (20 pregões) reagem rápido, mas têm mais ruído; janelas longas (120) são mais estáveis e demoram a mudar.</li>
+        <li>Correlação não é causa, e não diz quem vai na frente. Ela mede o que aconteceu, não o que vai acontecer.</li>
+      </ul>
+      <h3>Para que serve no dia a dia</h3>
+      <ul>
+        <li><strong>Contexto:</strong> entender se uma alta do ouro vem do dólar fraco ou do medo no mercado.</li>
+        <li><strong>Diversificação:</strong> duas posições em ativos com correlação alta são, na prática, quase a mesma aposta.</li>
+        <li><strong>Mudança de regime:</strong> quando uma relação clássica quebra, o motor do mercado pode estar mudando (por exemplo, de "medo de inflação" para "medo de recessão").</li>
+      </ul>`,
+  },
+  en: {
+    title: 'Intermarket analysis',
+    description: 'How stocks, bonds, the dollar, commodities and crypto move together: an up-to-date correlation matrix, last month’s changes and the classic intermarket relationships.',
+    subtitle: 'Markets don’t move alone. See how stocks, bonds, the dollar, commodities and crypto are relating to each other right now, and what changed over the last month.',
+    panel: 'Markets now',
+    panelNote: 'Daily closes; the latest value may be the session in progress. Yields in basis points (bp).',
+    corr: 'Correlation matrix',
+    corrDesc: (lag: number) =>
+      `Correlation of daily changes. Blue: they move together; orange: they move in opposite directions. Arrows show how much the correlation changed versus ${lag} sessions ago (about a month). Tap a cell to see its history on the chart.`,
+    window: 'Window',
+    windowGroup: 'Correlation window',
+    sessions: (n: number) => `${n} sessions`,
+    windowHint: { 20: '≈ 1 month', 60: '≈ 3 months', 120: '≈ 6 months' } as Record<number, string>,
+    changes: 'What changed in the last month',
+    changesDesc: 'Pairs whose correlation moved the most versus a month ago, in the selected window.',
+    history: 'Correlation over time',
+    historyDesc: 'Rolling correlation of the selected pair. Above zero, they moved together; below, in opposite directions.',
+    pairA: 'Market A',
+    pairB: 'Market B',
+    asOf: (d: string) => `Correlation with data through ${d}`,
+    method: 'Pearson correlation of daily returns (for yields, of the change in the rate), recalculated every hour.',
+    legendPos: 'Positive',
+    legendNeg: 'Negative',
+    loading: 'Loading…',
+    classic: 'Classic relationships',
+    classicDesc: 'Patterns intermarket analysts have watched for decades, and whether they hold right now. Relationships change over time: a pattern “out of place” is information, not a trade signal.',
+    expected: 'Historical pattern',
+    pairs: {
+      'dxy-gold': 'Gold is priced in dollars: when the dollar strengthens, gold gets more expensive in other currencies and tends to fall. Central bank buying and fear can push both up together.',
+      'dxy-oil': 'Oil is also priced in dollars, and a strong dollar usually weighs on commodities. Supply shocks (OPEC+, wars, sanctions) often dominate this relationship.',
+      'us10y-spx': 'When the market fears inflation, yields rise and stocks fall (opposite directions). When growth is the driver, yields and stocks rise together. The sign of the correlation shows which force is in charge.',
+      'oil-us10y': 'Pricier oil feeds expected inflation, and long-term yields tend to follow.',
+      'copper-us10y': 'Copper is in almost every industry (“Dr. Copper”) and reacts to global growth, just like long-term yields.',
+      'vix-spx': 'The VIX measures the fear priced into S&P 500 options and rises when stocks fall. It is one of the most stable relationships in markets.',
+      'btc-spx': 'Since 2020, bitcoin has tended to move with stocks, especially tech, as a risk asset. The relationship swings a lot.',
+      'usdbrl-ibov': 'When risk appetite drops, foreign investors leave Brazil: the dollar rises against the real and the stock market falls.',
+      'dxy-usdbrl': 'A strong dollar worldwide usually weakens emerging-market currencies, including the Brazilian real. Local news (public finances, the Selic rate) can decouple them.',
+    } as Record<string, string>,
+    learn: 'Understanding intermarket analysis',
+    learnHtml: `
+      <h3>What it is</h3>
+      <p>Intermarket analysis studies how the major markets influence each other. The idea, popularized by John Murphy in <em>Intermarket Analysis</em>, is that no market moves in isolation: interest rates affect stocks, the dollar affects commodities, and risk appetite runs through all of them, crypto included.</p>
+      <h3>The four markets</h3>
+      <ul>
+        <li><strong>Bonds (interest rates):</strong> the cost of money. Rising yields make credit pricier and lower the present value of company earnings.</li>
+        <li><strong>Stocks:</strong> reflect expected earnings and growth.</li>
+        <li><strong>Commodities:</strong> oil, metals and grains, tied to inflation and industrial activity.</li>
+        <li><strong>The dollar:</strong> the world’s reference currency. A strong dollar tends to pressure commodities and emerging markets.</li>
+      </ul>
+      <h3>Murphy’s cycle</h3>
+      <p>In a typical business cycle, markets tend to turn in sequence. Near the end of a slowdown, bonds rally first (yields stop rising), then stocks, and commodities last. Near the top of the cycle, the same order repeats on the way down. The sequence is a historical tendency, not a rule: in some cycles it fails or gets scrambled.</p>
+      <h3>How to read correlation</h3>
+      <ul>
+        <li><strong>+1</strong>: the two markets rise and fall together; <strong>−1</strong>: always in opposite directions; near <strong>0</strong>: no clear linear relationship.</li>
+        <li>Above 0.7 (in absolute value) is strong; 0.4 to 0.7, moderate; 0.2 to 0.4, weak.</li>
+        <li>The math uses <strong>daily changes</strong>, not prices. Two trending prices look correlated even when they are unrelated.</li>
+        <li>Short windows (20 sessions) react quickly but are noisier; long windows (120) are steadier and slower to change.</li>
+        <li>Correlation is not causation, and it does not say which market leads. It measures what happened, not what will happen.</li>
+      </ul>
+      <h3>How it helps day to day</h3>
+      <ul>
+        <li><strong>Context:</strong> telling whether a gold rally comes from a weak dollar or from fear in the market.</li>
+        <li><strong>Diversification:</strong> two positions in highly correlated assets are, in practice, nearly the same bet.</li>
+        <li><strong>Regime change:</strong> when a classic relationship breaks, the market’s driver may be changing (for example, from “inflation fear” to “recession fear”).</li>
+      </ul>`,
+  },
+}[lang];
+
+const pairs = returns ? allPairs(returns, DEFAULT_WINDOW) : [];
+const defaultKey = [...DEFAULT_PAIR].sort().join(',');
+const options = INTERMARKET_SERIES.map((s) => ({ id: s.id, name: seriesName(s, lang) }));
+---
+
+<Layout title={T.title} description={T.description} alternates={{ pt: route('intermarket', 'pt'), en: route('intermarket', 'en') }}>
+  <PageHeader title={T.title} subtitle={T.subtitle} />
+
+  <section class="rounded-xl border border-border bg-surface p-5" aria-labelledby="im-panel">
+    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+      <h2 id="im-panel" class="font-semibold">{T.panel}</h2>
+      <DataStamp name="intermarket" updatedAt={data?.updatedAt} source={data?.source ?? 'Yahoo Finance'} />
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-im-panel>
+      {data ? <Fragment set:html={renderPanel(data, lang)} /> : <p class="text-muted">{T.loading}</p>}
+    </div>
+    <p class="text-xs text-muted mt-3">{T.panelNote}</p>
+  </section>
+
+  <section class="mt-8" aria-labelledby="im-corr">
+    <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
+      <div>
+        <h2 id="im-corr" class="text-xl font-semibold">{T.corr}</h2>
+        <p class="text-sm text-muted mt-1 max-w-3xl">{T.corrDesc(CHANGE_LAG)}</p>
+      </div>
+      <div class="flex items-center gap-2 text-xs">
+        <span class="text-muted">{T.window}</span>
+        <div class="flex rounded-md border border-border overflow-hidden" role="group" aria-label={T.windowGroup}>
+          {CORR_WINDOWS.map((w) => (
+            <button type="button" data-window={w} title={T.windowHint[w]} aria-pressed={w === DEFAULT_WINDOW ? 'true' : 'false'} class="px-2.5 py-1 text-muted hover:text-text aria-pressed:bg-surface-2 aria-pressed:text-text">
+              {T.sessions(w)}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-3">
+      <div class="lg:col-span-2 rounded-xl border border-border bg-surface p-3">
+        <div class="overflow-x-auto">
+          <table class="w-full border-separate border-spacing-0" data-im-matrix>
+            {returns ? <Fragment set:html={renderMatrix(returns, DEFAULT_WINDOW, lang, defaultKey)} /> : <tbody><tr><td class="py-6 text-center text-muted">{T.loading}</td></tr></tbody>}
+          </table>
+        </div>
+        <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted mt-3 px-1">
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm" style="background:rgba(59,130,246,.7)"></span>{T.legendPos}</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm" style="background:rgba(245,158,11,.7)"></span>{T.legendNeg}</span>
+          <span data-im-asof>{data && T.asOf(formatDate(lastDate(data), lang))}</span>
+        </p>
+      </div>
+
+      <section class="rounded-xl border border-border bg-surface px-5 py-4" aria-labelledby="im-changes">
+        <h3 id="im-changes" class="font-semibold">{T.changes}</h3>
+        <p class="text-xs text-muted mt-1 mb-1">{T.changesDesc}</p>
+        <ul class="divide-y divide-border text-sm" data-im-changes>
+          {returns ? <Fragment set:html={renderChanges(biggestChanges(pairs), lang)} /> : <li class="py-2 text-muted">{T.loading}</li>}
+        </ul>
+      </section>
+    </div>
+  </section>
+
+  <section class="mt-8 rounded-xl border border-border bg-surface p-4" aria-labelledby="im-history" data-im-history>
+    <div class="flex flex-wrap items-end justify-between gap-3 mb-2">
+      <div>
+        <h2 id="im-history" class="font-semibold">{T.history}</h2>
+        <p class="text-xs text-muted mt-1">{T.historyDesc}</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        {[T.pairA, T.pairB].map((label, i) => (
+          <label class="flex items-center gap-1.5">
+            <span class="sr-only">{label}</span>
+            <select data-pair-select={i} class="rounded-md border border-border bg-surface-2 px-2 py-1">
+              {options.map((o) => <option value={o.id} selected={o.id === DEFAULT_PAIR[i]}>{o.name}</option>)}
+            </select>
+          </label>
+        ))}
+        <span class="text-xs text-muted" data-im-window-label>{T.sessions(DEFAULT_WINDOW)}</span>
+      </div>
+    </div>
+    <div class="h-[300px] relative" data-im-chart>
+      <p class="absolute inset-0 grid place-items-center text-sm text-muted z-10" data-im-chart-msg>{T.loading}</p>
+    </div>
+    <p class="text-xs text-muted mt-2">{T.method}</p>
+  </section>
+
+  <section class="mt-8" aria-labelledby="im-classic">
+    <h2 id="im-classic" class="text-xl font-semibold">{T.classic}</h2>
+    <p class="text-sm text-muted mt-1 mb-4 max-w-3xl">{T.classicDesc}</p>
+    <ul class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {CLASSIC_PAIRS.map((p) => (
+        <li class="rounded-xl border border-border bg-surface p-4 flex flex-col">
+          <button type="button" data-pair={`${p.a},${p.b}`} class="text-left font-semibold hover:text-accent">
+            {seriesName(seriesById(p.a)!, lang)} × {seriesName(seriesById(p.b)!, lang)}
+          </button>
+          <p class="text-xs text-muted mt-0.5">{T.expected}: <span class="text-text">{expectedLabel(p, lang)}</span></p>
+          <p class="text-sm text-text/90 mt-2 flex-1">{T.pairs[p.id]}</p>
+          <p class="text-sm mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1" data-classic={p.id}>
+            {returns ? <Fragment set:html={renderClassicNow(p, returns, DEFAULT_WINDOW, lang)} /> : <span class="text-muted">{T.loading}</span>}
+          </p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="mt-10 rounded-xl border border-border bg-surface p-6" aria-labelledby="im-learn">
+    <h2 id="im-learn" class="text-2xl font-semibold">{T.learn}</h2>
+    <div class="prose-et max-w-3xl mt-2" set:html={T.learnHtml} />
+    <p class="text-xs text-muted mt-4">{t(lang).common.notAdvice}</p>
+  </section>
+</Layout>
+
+<script>
+  import { BaselineSeries, ColorType, createChart, type ISeriesApi } from 'lightweight-charts';
+  import { CLASSIC_PAIRS, CORR_WINDOWS, DEFAULT_WINDOW, type CorrWindow } from '../data/intermarket';
+  import { LOCALE, pageLang } from '../i18n';
+  import { formatDate } from '../lib/format';
+  import { allPairs, biggestChanges, dailyReturns, lastDate, rollingCorrelation, type Returns } from '../lib/intermarket';
+  import { renderChanges, renderClassicNow, renderMatrix, renderPanel } from '../lib/intermarket-view';
+  import { every, REFRESH_MS, setHtml, setStamp } from '../lib/live';
+  import { fetchLatest, type IntermarketData } from '../lib/market';
+
+  const lang = pageLang();
+  const MSG = {
+    pt: { error: 'Sem dados suficientes para este par.', sessions: (n: number) => `${n} pregões`, asOf: (d: string) => `Correlação com dados até ${d}` },
+    en: { error: 'Not enough data for this pair.', sessions: (n: number) => `${n} sessions`, asOf: (d: string) => `Correlation with data through ${d}` },
+  }[lang];
+  const STORE_KEY = 'easytrader:intermarket-window';
+  const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+  let data: IntermarketData | null = null;
+  let returns: Returns = {};
+  let win: CorrWindow = loadWindow();
+  const selects = [...document.querySelectorAll<HTMLSelectElement>('[data-pair-select]')];
+  let pair: [string, string] = [selects[0].value, selects[1].value];
+
+  function loadWindow(): CorrWindow {
+    try {
+      const saved = Number(localStorage.getItem(STORE_KEY));
+      if ((CORR_WINDOWS as readonly number[]).includes(saved)) return saved as CorrWindow;
+    } catch {
+      // Sem localStorage: usa o padrão.
+    }
+    return DEFAULT_WINDOW;
+  }
+
+  // ---------- Gráfico da correlação móvel ----------
+
+  const chartEl = document.querySelector<HTMLElement>('[data-im-chart]')!;
+  const chartMsg = document.querySelector<HTMLElement>('[data-im-chart-msg]')!;
+  const chart = createChart(chartEl, {
+    autoSize: true,
+    layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: css('--color-muted'), attributionLogo: true },
+    grid: { vertLines: { color: css('--color-border') + '55' }, horzLines: { color: css('--color-border') + '55' } },
+    rightPriceScale: { borderColor: css('--color-border') },
+    timeScale: { borderColor: css('--color-border') },
+    localization: { locale: LOCALE[lang], priceFormatter: (v: number) => v.toLocaleString(LOCALE[lang], { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
+  });
+  const series: ISeriesApi<'Baseline'> = chart.addSeries(BaselineSeries, {
+    baseValue: { type: 'price', price: 0 },
+    topLineColor: '#3b82f6',
+    topFillColor1: 'rgba(59,130,246,.35)',
+    topFillColor2: 'rgba(59,130,246,.05)',
+    bottomLineColor: '#f59e0b',
+    bottomFillColor1: 'rgba(245,158,11,.05)',
+    bottomFillColor2: 'rgba(245,158,11,.35)',
+    lineWidth: 2,
+    autoscaleInfoProvider: () => ({ priceRange: { minValue: -1, maxValue: 1 } }),
+  });
+  series.priceScale().applyOptions({ scaleMargins: { top: 0.05, bottom: 0.05 } });
+  series.createPriceLine({ price: 0, color: css('--color-muted'), lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
+
+  function drawChart() {
+    if (!data) return;
+    const points = rollingCorrelation(returns, data.dates, pair[0], pair[1], win);
+    series.setData(points);
+    chartMsg.textContent = MSG.error;
+    chartMsg.hidden = points.length > 0;
+    if (points.length) chart.timeScale().fitContent();
+    setHtml('[data-im-window-label]', MSG.sessions(win));
+  }
+
+  // ---------- Matriz, mudanças e relações clássicas ----------
+
+  const pairKey = () => [...pair].sort().join(',');
+
+  function drawCorrelation() {
+    if (!data) return;
+    setHtml('[data-im-matrix]', renderMatrix(returns, win, lang, pairKey()));
+    setHtml('[data-im-changes]', renderChanges(biggestChanges(allPairs(returns, win)), lang));
+    for (const p of CLASSIC_PAIRS) setHtml(`[data-classic="${p.id}"]`, renderClassicNow(p, returns, win, lang));
+    setHtml('[data-im-asof]', MSG.asOf(formatDate(lastDate(data), lang)));
+    document.querySelectorAll<HTMLButtonElement>('[data-window]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.window) === win)));
+  }
+
+  function selectPair(a: string, b: string, scroll: boolean) {
+    pair = [a, b];
+    selects[0].value = a;
+    selects[1].value = b;
+    document.querySelectorAll<HTMLButtonElement>('[data-im-matrix] [data-key]').forEach((el) => el.setAttribute('aria-pressed', String(el.dataset.key === pairKey())));
+    drawChart();
+    if (scroll) document.querySelector('[data-im-history]')!.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-window]').forEach((b) =>
+    b.addEventListener('click', () => {
+      win = Number(b.dataset.window) as CorrWindow;
+      try {
+        localStorage.setItem(STORE_KEY, String(win));
+      } catch {
+        // Sem localStorage: vale só nesta visita.
+      }
+      drawCorrelation();
+      drawChart();
+    }),
+  );
+
+  // Quadros da matriz, lista de mudanças e títulos das relações clássicas.
+  document.addEventListener('click', (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-pair]');
+    if (!el) return;
+    const [a, b] = el.dataset.pair!.split(',');
+    selectPair(a, b, true);
+  });
+
+  selects.forEach((s) => s.addEventListener('change', () => selectPair(selects[0].value, selects[1].value, false)));
+
+  every(REFRESH_MS, async () => {
+    const fresh = await fetchLatest<IntermarketData>('intermarket');
+    if (!fresh) {
+      if (!data) chartMsg.textContent = MSG.error;
+      return;
+    }
+    data = fresh;
+    returns = dailyReturns(fresh);
+    setHtml('[data-im-panel]', renderPanel(fresh, lang));
+    setStamp('intermarket', fresh.updatedAt);
+    drawCorrelation();
+    drawChart();
+  });
+</script>

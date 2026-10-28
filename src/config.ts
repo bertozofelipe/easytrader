@@ -6,11 +6,12 @@ export const SITE = {
 };
 
 /** Menu principal (rótulos em src/i18n/ui.ts → nav). Páginas sem versão no idioma ficam de fora. */
-export const NAV: { key: RouteKey; label: 'news' | 'calendar' | 'assets' | 'crypto' | 'indicators' | 'school' | 'tools' }[] = [
+export const NAV: { key: RouteKey; label: 'news' | 'calendar' | 'assets' | 'crypto' | 'intermarket' | 'indicators' | 'school' | 'tools' }[] = [
   { key: 'news', label: 'news' },
   { key: 'calendar', label: 'calendar' },
   { key: 'assets', label: 'assets' },
   { key: 'crypto', label: 'crypto' },
+  { key: 'intermarket', label: 'intermarket' },
   { key: 'indicators', label: 'indicators' },
   { key: 'school', label: 'school' },
   { key: 'tools', label: 'tools' },

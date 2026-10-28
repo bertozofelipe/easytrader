@@ -18,6 +18,8 @@ import { fetchNews } from './providers/rss.mjs';
 import { fetchCommodityQuotes } from './providers/commodity-quotes.mjs';
 import { COMMODITY_QUOTES } from '../src/data/commodities.ts';
 import { fetchCboeIndices } from './providers/cboe.mjs';
+import { fetchIntermarket } from './providers/intermarket.mjs';
+import { INTERMARKET_SERIES } from '../src/data/intermarket.ts';
 import { fetchSignals } from './providers/history.mjs';
 import { fetchSignalsIntraday } from './providers/intraday.mjs';
 import { FEEDS, NEWS_MAX_AGE_HOURS, NEWS_MAX_TOTAL, NEWS_PER_FEED } from './feeds.mjs';
@@ -33,13 +35,14 @@ const DATASETS = {
   cboe: () => fetchCboeIndices(CBOE_ASSETS),
   commodities: () => fetchCommodityQuotes(COMMODITY_QUOTES),
   news: () => fetchNews(FEEDS, { maxAgeHours: NEWS_MAX_AGE_HOURS, perFeed: NEWS_PER_FEED, maxTotal: NEWS_MAX_TOTAL }),
+  intermarket: () => fetchIntermarket(INTERMARKET_SERIES),
   signals: () => fetchSignals(ASSETS),
   'signals-intraday': () => fetchSignalsIntraday(ASSETS),
 };
 
 // Conjuntos baseados em candles diários: recalcula só quando a versão
 // publicada passou dessa idade (poupa as APIs; o resultado muda pouco no dia).
-const MAX_AGE_HOURS = { signals: 4 };
+const MAX_AGE_HOURS = { signals: 4, intermarket: 1 };
 // FORCE=signals,... recalcula esses conjuntos mesmo dentro do prazo (disparo manual do workflow).
 const FORCE = new Set((process.env.FORCE ?? '').split(',').map((s) => s.trim()).filter(Boolean));
 

@@ -57,6 +57,14 @@ Legenda: ✅ feito · 🔄 em andamento · ⬜ a fazer · 👤 depende de ação
 - ✅ `/indicadores` com 8 guias: médias móveis, RSI, MACD, Bollinger, estocástico, ATR, volume, suporte e resistência
 - ✅ VIX (Cboe, pontos do índice, 15 min de atraso) em "Índices e commodities"
 
+## Análise intermercados ✅ (28/10/2026)
+
+- ✅ `/intermercados` e `/en/intermarket` (menu "Intermercados"): painel com os quatro mercados de Murphy (ações, juros, dólar, commodities), risco (VIX, bitcoin) e Brasil (Ibovespa, USD/BRL), com variação no dia, em 1 mês e minigráfico de 3 meses
+- ✅ `intermarket.json`: 2 anos de fechamentos diários das 10 séries no calendário do S&P 500, Yahoo Finance em uma chamada, recoletado a cada hora
+- ✅ Matriz de correlação (Pearson dos retornos diários; juros pela variação da taxa) com janela de 20, 60 ou 120 pregões (lembrada no navegador) e seta da mudança em relação a 21 pregões atrás
+- ✅ Atualização da correlação: lista "O que mudou no último mês" (pares que mais mudaram) e gráfico da correlação móvel de qualquer par (toque na matriz ou escolha nos seletores)
+- ✅ 9 relações clássicas (dólar × ouro, juros × ações, VIX × S&P, USD/BRL × Ibovespa…) com o padrão histórico e se ele vale agora; texto educativo sobre o ciclo de Murphy e como ler correlação
+
 ## Etapa 5 — Escola v1 e ferramentas 🔄 (ferramentas prontas em 13/10/2026; aulas adiadas)
 
 - ⬜ Trilha "Fundamentos" com 8–10 aulas

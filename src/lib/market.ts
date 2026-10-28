@@ -189,3 +189,15 @@ export async function fetchDatasets(names: DatasetName[] = QUOTE_DATASETS): Prom
   const values = await Promise.all(names.map((n) => fetchLatest(n)));
   return Object.fromEntries(names.map((n, i) => [n, values[i]])) as Datasets;
 }
+
+/**
+ * Fechamentos diários da análise intermercados (intermarket.json), no
+ * calendário de pregões do S&P 500; ids em src/data/intermarket.ts. Null =
+ * sem pregão naquele mercado (feriado local).
+ */
+export interface IntermarketData extends Dataset {
+  source: string;
+  failed: string[];
+  dates: string[];
+  series: Record<string, (number | null)[]>;
+}
